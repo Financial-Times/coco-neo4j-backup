@@ -22,3 +22,9 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+# to avoid accidentally committing credentials
+envvars.bash
+
+# to avoid accidentally committing the binary
+coco-neo4j-backup
