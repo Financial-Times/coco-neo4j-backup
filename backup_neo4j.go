@@ -7,12 +7,15 @@ import (
 	"log"
 	"os"
 	"time"
-	//"github.com/Redundancy/go-sync"
 )
 
-var tarWriter *tar.Writer
-var info *log.Logger
-var warn *log.Logger
+var (
+	tarWriter *tar.Writer
+	info *log.Logger
+	warn *log.Logger
+	fleetEndpoint           = flag.String("fleetEndpoint", "", "Fleet API http endpoint: `http://host:port`")
+	socksProxy              = flag.String("socksProxy", "", "address of socks proxy, e.g., 127.0.0.1:9050")
+)
 
 const logPattern = log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile | log.LUTC
 
@@ -26,9 +29,10 @@ func main() {
 	printArgs(awsAccessKey, awsSecretKey, bucketName, dataFolder, s3Domain, env)
 	checkIfArgsAreEmpty(awsAccessKey, awsSecretKey, bucketName, dataFolder, s3Domain, env)
 
-	//fs := &gosync.BasicSummary{
+
 
 }
+
 
 func readArgs() (string, string, string, string, string, string) {
 	awsAccessKey := flag.String("awsAccessKey", "", "AWS access key")
@@ -114,18 +118,5 @@ func addtoArchive(path string, fileInfo os.FileInfo, err error) error {
 
 	info.Println("Added file " + path + " to archive.")
 	return nil
-}
-
-func initLogs(infoHandle io.Writer, warnHandle io.Writer, panicHandle io.Writer) {
-	//to be used for INFO-level logging: info.Println("foor is now bar")
-	info = log.New(infoHandle, "INFO  - ", logPattern)
-	//to be used for WARN-level logging: info.Println("foor is now bar")
-	warn = log.New(warnHandle, "WARN  - ", logPattern)
-
-	//to be used for panics: log.Panic("foo is on fire")
-	//log.Panic() = log.Printf + panic()
-	log.SetFlags(logPattern)
-	log.SetPrefix("ERROR - ")
-	log.SetOutput(panicHandle)
 }
 
