@@ -53,9 +53,12 @@ func checkDeployerIsStopped() {
 	// TODO implement this function
 	info.Printf("TODO DEFINITELY: check using the fleet API that the deployer isn't running.")
 	fleetClient, err := newFleetClient()
-	if err {
+	if err != nil {
 		panic(err) // TODO handle this properly
 	}
 	unitStates, err := fleetClient.UnitStates()
-	info.Printf(unitStates)
+
+	for index, each := range unitStates {
+		info.Printf("index=%d name=%s", index, each.Name)
+	}
 }

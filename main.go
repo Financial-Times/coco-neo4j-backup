@@ -5,11 +5,14 @@ import (
 	"time"
 	"io"
 	"log"
+	"flag"
 )
 
 var (
 	info *log.Logger
 	warn *log.Logger
+	fleetEndpoint           = flag.String("fleetEndpoint", "", "Fleet API http endpoint: `http://host:port`")
+	socksProxy              = flag.String("socksProxy", "", "address of socks proxy, e.g., 127.0.0.1:9050")
 )
 
 const logPattern = log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile | log.LUTC
