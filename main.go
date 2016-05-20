@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"flag"
+	"github.com/codegangsta/cli"
 )
 
 var (
@@ -24,7 +25,31 @@ func main() {
 	info.Printf("Starting backup operation at startTime=%d.\n", startTime)
 
 	// TODO - get awesome code to parse command-line args from @gartonm
-	backup()
+
+	app := cli.NewApp()
+	app.Name = "Universal Publishing CoCo neo4j Backup Service"
+	app.Usage = "Execute a cold backup of a neo4j instance inside a CoCo cluster and upload it to AWS S3."
+	app.Action = func(c *cli.Context) error {
+		run()
+		return nil
+	}
+
+	app.Run(os.Args)
+}
+
+func run() {
+	rsync()
+	shutDownNeo()
+	rsync()
+	createBackup()
+	startNeo()
+	uploadToS3()
+	validateEnvironment()
+	info.Printf("Finishing early because implementation is still on-going.")
+}
+
+func uploadToS3() {
+	info.Printf("TODO NOW DEFINITELY: Upload the archive to S3.")
 }
 
 func initLogs(infoHandle io.Writer, warnHandle io.Writer, panicHandle io.Writer) {

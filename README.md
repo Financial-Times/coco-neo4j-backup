@@ -5,6 +5,8 @@ Docker Image for automated neo4j backups to S3.
 
 **NB. As of 2016-05-20, this is a work in progress.**
 
+https://circleci.com/gh/:owner/:repo.png?circle-token=:circle-token
+
 Requirements
 ------------
 
@@ -42,4 +44,4 @@ Notes and Questions
         $ go build -o "/private/var/folders/rt/8c3952t54cd5q7x08z4m6j5m0000gn/T/Build main.go and rungo" /Users/dafydd/dev/go/src/github.com/Financial-Times/coco-neo4j-backup/main.go
         src/github.com/Financial-Times/coco-neo4j-backup/main.go:24: undefined: backup
 
-    * A: 
+    * A: To fix this problem, change the working directory for the run configuration to be the home directory of the project.

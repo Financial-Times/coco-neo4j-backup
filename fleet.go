@@ -57,7 +57,7 @@ func checkDeployerIsStopped() {
 		panic(err) // TODO handle this properly
 	}
 	unitStates, err := fleetClient.UnitStates()
-
+	info.Printf("%d units retrieved", len(unitStates))
 	for index, each := range unitStates {
 		info.Printf("index=%d name=%s", index, each.Name)
 	}
