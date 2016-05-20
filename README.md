@@ -3,6 +3,7 @@ coco-neo4j-backup
 
 Docker Image for automated neo4j backups to S3.
 
+**NB. As of 2016-05-20, this is a work in progress.**
 
 Requirements
 ------------
