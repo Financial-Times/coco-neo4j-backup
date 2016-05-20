@@ -5,7 +5,7 @@ Docker Image for automated neo4j backups to S3.
 
 **NB. As of 2016-05-20, this is a work in progress.**
 
-https://circleci.com/gh/:owner/:repo.png?circle-token=:circle-token
+[![CircleCI](https://circleci.com/gh/Financial-Times/coco-neo4j-backup.svg?style=svg)](https://circleci.com/gh/Financial-Times/coco-neo4j-backup)
 
 Requirements
 ------------
