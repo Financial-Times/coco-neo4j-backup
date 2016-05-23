@@ -5,15 +5,12 @@ import (
 	"time"
 	"io"
 	"log"
-	"flag"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 var (
 	info *log.Logger
 	warn *log.Logger
-	fleetEndpoint           = flag.String("fleetEndpoint", "", "Fleet API http endpoint: `http://host:port`")
-	socksProxy              = flag.String("socksProxy", "", "address of socks proxy, e.g., 127.0.0.1:9050")
 )
 
 const logPattern = log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile | log.LUTC
@@ -24,25 +21,39 @@ func main() {
 	startTime := time.Now()
 	info.Printf("Starting backup operation at startTime=%d.\n", startTime)
 
-	// TODO - get awesome code to parse command-line args from @gartonm
-
 	app := cli.NewApp()
 	app.Name = "Universal Publishing CoCo neo4j Backup Service"
 	app.Usage = "Execute a cold backup of a neo4j instance inside a CoCo cluster and upload it to AWS S3."
+	app.Flags = []cli.Flag {
+		cli.StringFlag{
+			Name: "fleetEndpoint, f",
+			Value: "",
+			Usage: "connect to fleet API at `URL`",
+		},
+		cli.StringFlag{
+			Name: "socksProxy, p",
+			Value: "",
+			Usage: "connect to fleet via SOCKS proxy at `IP:PORT`",
+		},
+	}
 	app.Action = func(c *cli.Context) error {
-		run()
+		run(c.String("fleetEndpoint"), c.String("socksProxy"))
 		return nil
 	}
 
 	app.Run(os.Args)
 }
 
-func run() {
+func run(fleetEndpoint string, socksProxy string) {
+	fleetClient, err := newFleetClient(fleetEndpoint, socksProxy)
+	if err != nil {
+		panic(err) // TODO handle this properly
+	}
 	rsync()
-	shutDownNeo()
+	shutDownNeo(fleetClient)
 	rsync()
 	createBackup()
-	startNeo()
+	startNeo(fleetClient)
 	uploadToS3()
 	validateEnvironment()
 	info.Printf("Finishing early because implementation is still on-going.")

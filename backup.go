@@ -1,6 +1,9 @@
 package main
 
-import "os/exec"
+import (
+	"os/exec"
+	"github.com/coreos/fleet/client"
+)
 
 func rsync() {
 	info.Printf("TODO: rsync the neo4j data directory to a temporary location.")
@@ -21,7 +24,7 @@ func createBackup() {
 	info.Printf("TODO NOW DEFINITELY: Create a backup artefact using tar and gzip.")
 }
 
-func startNeo() {
+func startNeo(fleetClient client.API) {
 	info.Printf("TODO: Start up neo4j.")
 	info.Printf("TODO: Start up neo4j's dependencies.")
 }
