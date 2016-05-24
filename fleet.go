@@ -66,7 +66,7 @@ func isServiceActive(fleetClient client.API, serviceName string) (bool, error) {
 	info.Printf("%d units retrieved", len(unitStates))
 	for index, each := range unitStates {
 		if each.Name == serviceName {
-			info.Printf("index=%d name=%s state=%s", index, each.Name, each.SystemdActiveState)
+			info.Printf("index=%d Name=%s SystemdActiveState=%s SystemdLoadState=%s", index, each.Name, each.SystemdActiveState, each.SystemdLoadState)
 			if each.SystemdActiveState == "active" {
 				return true, err
 			} else {

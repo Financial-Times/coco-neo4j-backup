@@ -7,6 +7,7 @@ Docker Image for automated neo4j backups to S3.
 
 [![CircleCI](https://circleci.com/gh/Financial-Times/coco-neo4j-backup.svg?style=svg)](https://circleci.com/gh/Financial-Times/coco-neo4j-backup)
 
+
 Requirements
 ------------
 
@@ -18,10 +19,22 @@ so that it can do rsync and all that jazz
 no API for this.
 
 
+Development Setup
+-----------------
+
+1. Install Go, fleetctl and IntelliJ.
+1. Clone this repository.
+1. Open the project up in IntelliJ.
+1. Set up an SSH tunnel with a dynamic forwarding rule on port 1080.
+1. Build and run:
+
+        go build
+        ./coco-neo3j-bakup --socksProxy localhost:1080
+
+
 TODO
 ----
 
-1. Set up a skeleton codebase.
 1. Write the code to:
 
     1. Shut down neo4j's dependencies.
@@ -30,6 +43,8 @@ TODO
     1. Upload the archive to S3.
     1. Start up neo4j.
     1. Start up neo4j's dependencies.
+    1. Shameless plagiarise mongo-backup.timer to create neo4j-backup.timer
+    1. 
 
 
 Notes and Questions
