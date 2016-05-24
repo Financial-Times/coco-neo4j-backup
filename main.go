@@ -27,24 +27,50 @@ func main() {
 	app.Flags = []cli.Flag {
 		cli.StringFlag{
 			Name: "fleetEndpoint, f",
-			Value: "",
+			Value: "http://localhost:49153",
 			Usage: "connect to fleet API at `URL`",
+			EnvVar: "FLEETCTL_ENDPOINT",
 		},
 		cli.StringFlag{
 			Name: "socksProxy, p",
 			Value: "",
-			Usage: "connect to fleet via SOCKS proxy at `IP:PORT`",
+			Usage: "connect to fleet via SOCKS proxy at `PROXY` in IP:PORT format",
+			EnvVar: "SOCKS_PROXY",
+		},
+		cli.StringFlag{
+			Name: "awsAccessKey, a",
+			Value: "",
+			Usage: "connect to AWS API using access key `KEY`",
+			EnvVar: "AWS_ACCESS_KEY",
+		},
+		cli.StringFlag{
+			Name: "awsSecretKey, s",
+			Value: "",
+			Usage: "connect to AWS API using secret key `KEY`",
+			EnvVar: "AWS_SECRET_KEY",
+		},
+		cli.StringFlag{
+			Name: "s3bucket, b",
+			Value: "coco-neo4j-backups",
+			Usage: "upload archive to S3 bucket `BUCKET`",
+			EnvVar: "NEO4J_BACKUP_S3BUCKET",
 		},
 	}
 	app.Action = func(c *cli.Context) error {
-		run(c.String("fleetEndpoint"), c.String("socksProxy"))
+		run(
+			c.String("fleetEndpoint"),
+			c.String("socksProxy"),
+			c.String("awsAccessKey"),
+			c.String("awsSecretKey"),
+			c.String("s3bucket"),
+		)
 		return nil
 	}
 
 	app.Run(os.Args)
 }
 
-func run(fleetEndpoint string, socksProxy string) {
+func run(fleetEndpoint string, socksProxy string, awsAccessKey string, awsSecretKey string, s3bucket string) {
 	fleetClient, err := newFleetClient(fleetEndpoint, socksProxy)
 	if err != nil {
 		panic(err) // TODO handle this properly
@@ -54,12 +80,12 @@ func run(fleetEndpoint string, socksProxy string) {
 	rsync()
 	createBackup()
 	startNeo(fleetClient)
-	uploadToS3()
+	uploadToS3(awsAccessKey, awsSecretKey, s3bucket)
 	validateEnvironment()
 	info.Printf("Finishing early because implementation is still on-going.")
 }
 
-func uploadToS3() {
+func uploadToS3(awsAccessKey string, awsSecretKey string, s3bucket string) {
 	info.Printf("TODO NOW DEFINITELY: Upload the archive to S3.")
 }
 
