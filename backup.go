@@ -30,7 +30,7 @@ func rsync(sourceDir string, targetDir string) {
 	log.Info("TODO: repeat the rsync process until the changes are minimal")
 }
 
-func createBackup(dataFolder string, archiveName string) {
+func createBackup(dataFolder string, archiveName string) (*io.PipeReader, error) {
 	if _, err := os.Stat(dataFolder); os.IsNotExist(err) {
 		log.Warnf("Directory dataFolder=\"%s\" does not exist!", dataFolder)
 		panic(err) // TODO Handle this properly.
@@ -40,11 +40,9 @@ func createBackup(dataFolder string, archiveName string) {
 		panic(err) // TODO Handle this properly.
 	}
 
-	log.WithFields(log.Fields{
-		"archiveName": archiveName,
-	}).Info("Compressing archive.")
+	log.WithFields(log.Fields{"archiveName": archiveName,}).Info("Compressing archive.")
 
-	_, pipeWriter := io.Pipe()
+	pipeReader, pipeWriter := io.Pipe()
 	//compress the tar archive
 	gzipWriter := gzip.NewWriter(pipeWriter)
 	//create a tar archive
@@ -62,8 +60,7 @@ func createBackup(dataFolder string, archiveName string) {
 		//writing all files and folder structure to the archive
 		filepath.Walk(dataFolder, addtoArchive)
 	}()
-
-
+	return pipeReader, nil
 }
 
 func addtoArchive(path string, fileInfo os.FileInfo, err error) error {

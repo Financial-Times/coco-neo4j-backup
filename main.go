@@ -120,32 +120,37 @@ func run(
 	// TODO generate archiveName
 	archiveName := time.Now().UTC().Format(archiveNameDateFormat)
 	archiveName += "_" + env
-	createBackup(targetFolder, archiveName)
+	archiveName += ".tar.gz"
+	pipeReader, _ := createBackup(targetFolder, archiveName)
 	startNeo(fleetClient)
-	uploadToS3(startTime, awsAccessKey, awsSecretKey, s3Domain, bucketName, archiveName)
+	uploadToS3(startTime, awsAccessKey, awsSecretKey, s3Domain, bucketName, archiveName, pipeReader)
 	validateEnvironment()
 	log.Infof("Finishing early because implementation is still on-going.")
 }
 
-func uploadToS3(startTime time.Time, awsAccessKey string, awsSecretKey string, s3Domain string, bucketName string, archiveName string) {
-	// TODO test the S3 integration
-	_, pipeWriter := io.Pipe()
-
-	//a goroutine is needed because the pipe is synchronous:
-	//the writer will block until the reader is reading and vice-versa
-	go func() {
-		defer pipeWriter.Close()
-	}()
+func uploadToS3(startTime time.Time, awsAccessKey string, awsSecretKey string, s3Domain string, bucketName string, archiveName string, pipeReader *io.PipeReader) (err error){
 
 	bucketWriterProvider := newS3WriterProvider(awsAccessKey, awsSecretKey, s3Domain, bucketName)
 
 	bucketWriter, err := bucketWriterProvider.getWriter(archiveName)
 	if err != nil {
 		log.Panic("BucketWriter cannot be created: "+err.Error(), err)
-		return
+		return err
 	}
 	defer bucketWriter.Close()
-	log.Infof("Uploaded archive " + archiveName + " to " + bucketName + " S3 bucket.")
-	log.Info("Duration: " + time.Since(startTime).String())
-	log.Infof("TODO NOW DEFINITELY: Upload the archive to S3.")
+
+	//upload the archive to the bucket
+	_, err = io.Copy(bucketWriter, pipeReader)
+	if err != nil {
+		log.Panic("Cannot upload archive to S3: "+err.Error(), err)
+		return
+	}
+	pipeReader.Close()
+
+	log.WithFields(log.Fields{
+		"archiveName": archiveName,
+		"bucketName": bucketName,
+		"duration": time.Since(startTime).String(),
+	}).Info("Uploaded archive to S3.")
+	return nil
 }
