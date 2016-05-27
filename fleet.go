@@ -7,7 +7,7 @@ import (
 	"time"
 	"golang.org/x/net/proxy"
 	"net/http"
-	"log"
+	log "github.com/Sirupsen/logrus"
 )
 
 func newFleetClient(fleetEndpoint string, socksProxy string) (client.API, error) {
@@ -35,7 +35,7 @@ func newFleetClient(fleetEndpoint string, socksProxy string) (client.API, error)
 		}
 	}
 
-	info.Printf("Connecting to fleet API on %s", u)
+	log.Infof("Connecting to fleet API on %s", u)
 	fleetHTTPAPIClient, err := client.NewHTTPClient(httpClient, *u)
 	if err != nil {
 		panic(err) // TODO handle this properly
@@ -46,27 +46,31 @@ func newFleetClient(fleetEndpoint string, socksProxy string) (client.API, error)
 func shutDownNeo(fleetClient client.API) {
 	isDeployerActive, err := isServiceActive(fleetClient, "deployer.service")
 	if isDeployerActive || err != nil {
-		warn.Printf(`Problem: either the deployer is still active, or there was a problem checking its status.
+		log.Warnf(`Problem: either the deployer is still active, or there was a problem checking its status.
 We cannot complete the backup process in case neo4j is accidentally started up again during backup creation.`)
 		panic(err) // TODO handle this properly.
 	}
 	// TODO implement this function
-	info.Printf("TODO IFWEHAVETO: Use the Go fleet API to shut down neo4j's dependencies.")
-	info.Printf("TODO DEFINITELY: Shut down neo4j.")
+	log.Info("TODO IFWEHAVETO: Use the Go fleet API to shut down neo4j's dependencies.")
+	log.Info("TODO DEFINITELY: Shut down neo4j.")
 }
 
 func isServiceActive(fleetClient client.API, serviceName string) (bool, error) {
 	// TODO implement this function
-	info.Printf("TODO DEFINITELY: check using the fleet API that the deployer isn't running.")
 	unitStates, err := fleetClient.UnitStates()
 	if err != nil {
-		warn.Printf("Could not retrieve list of units from fleet API")
-		//panic(err) // TODO handle this properly
+		log.Panic("Could not retrieve list of units from fleet API, do you need to start a SOCKS proxy?")
+		return true, err // TODO handle this properly
 	}
-	info.Printf("%d units retrieved", len(unitStates))
+	log.WithFields(log.Fields{"num": len(unitStates)}).Info("Retrieved services from fleet API.")
 	for index, each := range unitStates {
 		if each.Name == serviceName {
-			info.Printf("index=%d Name=%s SystemdActiveState=%s SystemdLoadState=%s", index, each.Name, each.SystemdActiveState, each.SystemdLoadState)
+			log.WithFields(log.Fields{
+				"index": index,
+				"name": each.Name,
+				"SystemdActiveState": each.SystemdActiveState,
+				"SystemdLoadState": each.SystemdLoadState,
+			}).Info("Processing service.")
 			if each.SystemdActiveState == "active" {
 				return true, err
 			} else {
@@ -74,6 +78,6 @@ func isServiceActive(fleetClient client.API, serviceName string) (bool, error) {
 			}
 		}
 	}
-	warn.Printf("Could not find deployer in list of services!")
+	log.Panic("Could not find deployer in list of services!")
 	panic(err) // TODO handle this properly by returning a proper error from this function.
 }

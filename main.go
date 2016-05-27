@@ -4,27 +4,19 @@ import (
 	"os"
 	"time"
 	"io"
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"github.com/urfave/cli"
 	"archive/tar"
 )
-
-var (
-	info *log.Logger
-	warn *log.Logger
-)
-
-const logPattern = log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile | log.LUTC
 
 const archiveNameDateFormat = "2006-01-02T15-04-05"
 
 var tarWriter *tar.Writer
 
 func main() {
-	initLogs(os.Stdout, os.Stdout, os.Stderr)
 
 	startTime := time.Now()
-	info.Printf("Starting backup operation at startTime=%d.\n", startTime)
+	log.Infof("Starting backup operation at startTime=%d.\n", startTime)
 
 	app := cli.NewApp()
 	app.Name = "Universal Publishing CoCo neo4j Backup Service"
@@ -68,21 +60,21 @@ func main() {
 		},
 		cli.StringFlag{
 			Name: "s3Domain",
-			Value: "coco-neo4j-backups",
-			Usage: "upload archive to S3 domain `S3_DOMAIN`",
+			Value: "",
+			Usage: "upload archive to S3 with domain (i.e. hostname) `S3_DOMAIN`",
 			EnvVar: "S3_DOMAIN",
 		},
 		cli.StringFlag{
 			Name: "bucketName",
-			Value: "coco-neo4j-backups",
-			Usage: "upload archive to S3 bucket `BUCKET_NAME`",
+			Value: "",
+			Usage: "upload archive to S3 with bucket name `BUCKET_NAME`",
 			EnvVar: "BUCKET_NAME",
 		},
 		cli.StringFlag{
 			Name: "env",
 			Value: "",
-			Usage: "connect to environment with tag `TAG`",
-			EnvVar: "ENV_TAG",
+			Usage: "connect to CoCo environment with tag `ENVIRONMENT_TAG`",
+			EnvVar: "ENVIRONMENT_TAG",
 		},
 	}
 	app.Action = func(c *cli.Context) error {
@@ -123,7 +115,7 @@ func run(
 		panic(err) // TODO handle this properly
 	}
 	rsync(dataFolder, targetFolder)
-	shutDownNeo(fleetClient)
+	//shutDownNeo(fleetClient)
 	rsync(dataFolder, targetFolder)
 	// TODO generate archiveName
 	archiveName := time.Now().UTC().Format(archiveNameDateFormat)
@@ -132,7 +124,7 @@ func run(
 	startNeo(fleetClient)
 	uploadToS3(startTime, awsAccessKey, awsSecretKey, s3Domain, bucketName, archiveName)
 	validateEnvironment()
-	info.Printf("Finishing early because implementation is still on-going.")
+	log.Infof("Finishing early because implementation is still on-going.")
 }
 
 func uploadToS3(startTime time.Time, awsAccessKey string, awsSecretKey string, s3Domain string, bucketName string, archiveName string) {
@@ -153,21 +145,7 @@ func uploadToS3(startTime time.Time, awsAccessKey string, awsSecretKey string, s
 		return
 	}
 	defer bucketWriter.Close()
-	info.Println("Uploaded archive " + archiveName + " to " + bucketName + " S3 bucket.")
-	info.Println("Duration: " + time.Since(startTime).String())
-	info.Printf("TODO NOW DEFINITELY: Upload the archive to S3.")
+	log.Infof("Uploaded archive " + archiveName + " to " + bucketName + " S3 bucket.")
+	log.Info("Duration: " + time.Since(startTime).String())
+	log.Infof("TODO NOW DEFINITELY: Upload the archive to S3.")
 }
-
-func initLogs(infoHandle io.Writer, warnHandle io.Writer, panicHandle io.Writer) {
-	//to be used for INFO-level logging: info.Println("foor is now bar")
-	info = log.New(infoHandle, "INFO  - ", logPattern)
-	//to be used for WARN-level logging: info.Println("foor is now bar")
-	warn = log.New(warnHandle, "WARN  - ", logPattern)
-
-	//to be used for panics: log.Panic("foo is on fire")
-	//log.Panic() = log.Printf + panic()
-	log.SetFlags(logPattern)
-	log.SetPrefix("ERROR - ")
-	log.SetOutput(panicHandle)
-}
-

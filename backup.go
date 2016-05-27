@@ -9,14 +9,14 @@ import (
 	"compress/gzip"
 	"archive/tar"
 	"path/filepath"
-	"log"
+	log "github.com/Sirupsen/logrus"
 )
 
 func rsync(sourceDir string, targetDir string) {
 	if ! strings.HasSuffix(sourceDir, "/") {
-		warn.Printf("Source directory should probably have a trailing slash! sourceDir=\"%s\"", sourceDir)
+		log.Warnf("Source directory should probably have a trailing slash! sourceDir=\"%s\"", sourceDir)
 	}
-	info.Printf("TODO: rsync the neo4j data directory to a temporary location.")
+	log.Info("TODO: rsync the neo4j data directory to a temporary location.")
 
 	// TODO Split out the mega-multipack option of "archive" into its carefully selected constituent components.
 	cmd := exec.Command("rsync", "--archive", "--verbose", "--delete", sourceDir, targetDir)
@@ -25,21 +25,24 @@ func rsync(sourceDir string, targetDir string) {
 	if err != nil {
 		panic(err) // TODO deal with this properly
 	}
-	info.Printf("Output: %s\n", output)
+	log.WithFields(log.Fields{"output": output}).Info("rsync process complete.")
 
-	info.Printf("TODO: repeat the rsync process until the changes are minimal")
+	log.Info("TODO: repeat the rsync process until the changes are minimal")
 }
 
 func createBackup(dataFolder string, archiveName string) {
 	if _, err := os.Stat(dataFolder); os.IsNotExist(err) {
-		warn.Printf("Directory dataFolder=\"%s\" does not exist!", dataFolder)
+		log.Warnf("Directory dataFolder=\"%s\" does not exist!", dataFolder)
 		panic(err) // TODO Handle this properly.
 	}
 	if _, err := os.Stat(archiveName); os.IsExist(err) {
-		warn.Printf("Archive file archiveName=\"%s\" already exists!", archiveName)
+		log.Warnf("Archive file archiveName=\"%s\" already exists!", archiveName)
 		panic(err) // TODO Handle this properly.
 	}
-	info.Printf("TODO NOW DEFINITELY: Create a backup artefact using tar and gzip.")
+
+	log.WithFields(log.Fields{
+		"archiveName": archiveName,
+	}).Info("Compressing archive.")
 
 	_, pipeWriter := io.Pipe()
 	//compress the tar archive
@@ -92,17 +95,17 @@ func addtoArchive(path string, fileInfo os.FileInfo, err error) error {
 		log.Panic("Cannot add file to archive, error: "+err.Error(), err)
 	}
 
-	info.Println("Added file " + path + " to archive.")
+	log.WithFields(log.Fields{"path": path}).Info("Added file to archive.")
 	return nil
 }
 
 func startNeo(fleetClient client.API) {
-	info.Printf("TODO: Start up neo4j.")
-	info.Printf("TODO: Start up neo4j's dependencies.")
+	log.Info("TODO: Start up neo4j.")
+	log.Info("TODO: Start up neo4j's dependencies.")
 	// TODO figure out the correct values for these.
 	fleetClient.SetUnitTargetState("neo", "active")
 }
 
 func validateEnvironment() {
-	info.Printf("TODO: test that everything is ok")
+	log.Info("TODO: test that everything is ok")
 }
