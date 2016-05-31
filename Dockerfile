@@ -1,10 +1,8 @@
-FROM alpine
+    FROM alpine
 
 ADD  *.go /
-RUN apk add --update bash \
-  && apk --update add git\
+RUN apk add --update bash git alpine-sdk linux-headers go \
   && echo "http://dl-4.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
-  && apk --update add go\
   && ORG_PATH="github.com/Financial-Times" \
   && REPO_PATH="${ORG_PATH}/coco-neo4j-backup" \
   && export GOPATH=/gopath \
@@ -14,7 +12,7 @@ RUN apk add --update bash \
   && go get \
   && go test \
   && go build ${REPO_PATH} \
-  && apk del go git \
+  && apk del go git alpine-sdk linux-headers \
   && rm -rf $GOPATH /var/cache/apk/*
 
 CMD ./coco-neo4j-backup \
@@ -23,4 +21,4 @@ CMD ./coco-neo4j-backup \
     --bucketName=$BUCKET_NAME \
     --dataFolder=$DATA_FOLDER \
     --s3Domain=$S3_DOMAIN \
-    --env=$ENV_TAG
+    --env=$ENVIRONMENT_TAG
