@@ -110,14 +110,15 @@ func run(
 	env string,
 	) {
 
-	checkMounts()
+	//checkMounts()
 	fleetClient, err := newFleetClient(fleetEndpoint, socksProxy)
 	if err != nil {
 		log.Panic("Error instantiating fleet client!")
 		panic(err) // TODO handle this properly
 	}
 	rsync(dataFolder, targetFolder)
-	//shutDownNeo(fleetClient)
+	log.Info("TODO: repeat the rsync process until the changes are minimal")
+	shutDownNeo(fleetClient)
 	rsync(dataFolder, targetFolder)
 	// TODO generate archiveName
 	archiveName := time.Now().UTC().Format(archiveNameDateFormat)

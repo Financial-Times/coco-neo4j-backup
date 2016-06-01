@@ -2,7 +2,6 @@ package main
 
 import (
 	"os/exec"
-	"github.com/coreos/fleet/client"
 	"strings"
 	"os"
 	"io"
@@ -10,32 +9,30 @@ import (
 	"archive/tar"
 	"path/filepath"
 	log "github.com/Sirupsen/logrus"
-	//"bytes"
-	//"bytes"
 )
 
-func checkMounts() {
-	// TODO Split out the mega-multipack option of "archive" into its carefully selected constituent components.
-	log.Info("Checking mounts...")
-	cmd := exec.Command("ls", "/data")
-
-	output, err := cmd.CombinedOutput()
-	o := string(output[:len(output)])
-	if err != nil {
-		log.WithFields(log.Fields{"output": o, "err": err}).Panic("Error executing command!")
-		panic(err) // TODO deal with this properly
-	}
-	log.WithFields(log.Fields{"output": o}).Info("Command complete.")
-
-	cmd = exec.Command("df", "-h")
-	output, err = cmd.CombinedOutput()
-	o = string(output[:len(output)])
-	if err != nil {
-		log.WithFields(log.Fields{"output": o, "err": err}).Panic("Error executing command!")
-		panic(err) // TODO deal with this properly
-	}
-	log.WithFields(log.Fields{"output": o}).Info("Command complete.")
-}
+//func checkMounts() {
+//	// TODO Split out the mega-multipack option of "archive" into its carefully selected constituent components.
+//	log.Info("Checking mounts...")
+//	cmd := exec.Command("ls", "/data")
+//
+//	output, err := cmd.CombinedOutput()
+//	o := string(output[:len(output)])
+//	if err != nil {
+//		log.WithFields(log.Fields{"output": o, "err": err}).Panic("Error executing command!")
+//		panic(err) // TODO deal with this properly
+//	}
+//	log.WithFields(log.Fields{"output": o}).Info("Command complete.")
+//
+//	cmd = exec.Command("df", "-h")
+//	output, err = cmd.CombinedOutput()
+//	o = string(output[:len(output)])
+//	if err != nil {
+//		log.WithFields(log.Fields{"output": o, "err": err}).Panic("Error executing command!")
+//		panic(err) // TODO deal with this properly
+//	}
+//	log.WithFields(log.Fields{"output": o}).Info("Command complete!")
+//}
 
 func rsync(sourceDir string, targetDir string) {
 	if ! strings.HasSuffix(sourceDir, "/") {
@@ -47,13 +44,17 @@ func rsync(sourceDir string, targetDir string) {
 	cmd := exec.Command("rsync", "--archive", "--verbose", "--delete", sourceDir, targetDir)
 
 	output, err := cmd.CombinedOutput()
+	o := string(output[:len(output)])
 	if err != nil {
-		log.WithFields(log.Fields{"sourceDir": sourceDir, "targetDir": targetDir}).Panic("Error executing rsync command!")
+		log.WithFields(log.Fields{
+			"sourceDir": sourceDir,
+			"targetDir": targetDir,
+			"output": o,
+			"err": err,
+		}).Panic("Error executing rsync command!")
 		panic(err) // TODO deal with this properly
 	}
-	log.WithFields(log.Fields{"output": output}).Info("rsync process complete.")
-
-	log.Info("TODO: repeat the rsync process until the changes are minimal")
+	log.WithFields(log.Fields{"output": o}).Info("rsync process complete.")
 }
 
 func createBackup(dataFolder string, archiveName string) (*io.PipeReader, error) {
@@ -120,13 +121,6 @@ func addtoArchive(path string, fileInfo os.FileInfo, err error) error {
 
 	log.WithFields(log.Fields{"path": path}).Info("Added file to archive.")
 	return nil
-}
-
-func startNeo(fleetClient client.API) {
-	log.Info("TODO: Start up neo4j.")
-	log.Info("TODO: Start up neo4j's dependencies.")
-	// TODO figure out the correct values for these.
-	fleetClient.SetUnitTargetState("neo", "active")
 }
 
 func validateEnvironment() {
