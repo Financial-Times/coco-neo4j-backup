@@ -15,7 +15,7 @@ function env {
 #    export MOUNT_POINT="/vol/neo4j-red-1"
     export MOUNT_POINT="$HOME/Documents/Neo4j"
     export ETCDCTL="ssh semantic-tunnel-up.ft.com /usr/bin/etcdctl"
-    export FLEETD_BIN="/usr/local/bin/fleetctl"
+#    export FLEETD_BIN="/usr/local/bin/fleetctl"
 }
 
 function envlocal {
@@ -68,6 +68,7 @@ function runmac {
     envlocal
     echo "New data folder: $DATA_FOLDER"
     etcdset
+    echo "Running go build..."
     go build && ./coco-neo4j-backup --socksProxy="localhost:1080"
 }
 

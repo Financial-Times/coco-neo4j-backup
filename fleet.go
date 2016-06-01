@@ -8,7 +8,6 @@ import (
 	"golang.org/x/net/proxy"
 	"net/http"
 	log "github.com/Sirupsen/logrus"
-	"github.com/coreos/fleet/functional/util"
 )
 
 func newFleetClient(fleetEndpoint string, socksProxy string) (client.API, error) {
@@ -51,18 +50,29 @@ func shutDownNeo(fleetClient client.API) {
 We cannot complete the backup process in case neo4j is accidentally started up again during backup creation.`)
 		panic(err) // TODO handle this properly.
 	}
-	log.Info("TODO IFWEHAVETO: Use the Go fleet API to shut down neo4j's dependencies.")
-	neoServiceName := "neo4j-red@1.service"
-	log.Info("Shutting down neo4j-red@1....")
-	//fleetClient.SetUnitTargetState(neoServiceName, "inactive")
-	util.RunFleetctl("stop neo4j-red@1")
-	isNeoActive, err := isServiceActive(fleetClient, neoServiceName)
-	if isNeoActive || err != nil {
-		log.Warnf(`Problem: either neo4j is still active, or there was a problem checking its status.
-We cannot complete the backup process when neo4j is still running.`)
-		panic(err) // TODO handle this properly.
-	}
+	// TODO: Use the Go fleet API to shut down neo4j's dependencies (ingesters?).
+	serviceName := "neo4j-red@1.service"
+	setTargetState(fleetClient, serviceName, "inactive")
+	// TODO check whether neo4j has successfully been shut down
+}
 
+func setTargetState(fleetClient client.API, serviceName string, targetState string) (error) {
+	err := fleetClient.SetUnitTargetState(serviceName, targetState)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+			"targetState": targetState,
+			"serviceName": serviceName,
+		}).Panic("Problem setting unit target state!")
+		return err
+	} else {
+		log.WithFields(log.Fields{
+			"err": err,
+			"targetState": targetState,
+			"serviceName": serviceName,
+		}).Info("Set unit target state successfully.")
+		return err
+	}
 }
 
 func isServiceActive(fleetClient client.API, serviceName string) (bool, error) {
@@ -85,28 +95,18 @@ func isServiceActive(fleetClient client.API, serviceName string) (bool, error) {
 			} else {
 				return false, err
 			}
-		} else {
-			log.WithFields(log.Fields{
-				"index": index,
-				"name": each.Name,
-				"SystemdActiveState": each.SystemdActiveState,
-				"SystemdLoadState": each.SystemdLoadState,
-			}).Info("Processing service.")
 		}
 	}
-	log.WithFields(log.Fields{"serviceName": serviceName}).Panic("Could not find service in list of services!")
-	panic(err) // TODO handle this properly by returning a proper error from this function.
+	log.WithFields(log.Fields{
+		"serviceName": serviceName,
+	}).Panic("Could not find service in list of services!")
+	return false, err
 }
 
 func startNeo(fleetClient client.API) {
 	log.Info("Starting up neo4j...")
-	fleetClient.SetUnitTargetState("neo", "active")
-	isNeoActive, err := isServiceActive(fleetClient, "deployer.service")
-	if !isNeoActive || err != nil {
-		log.Warnf(`Problem starting up neo4j: either neo4j is not active, or there was a problem checking its status.
-neo4j must be started up to conclude the backup process.`)
-		panic(err) // TODO handle this properly.
-	}
-	log.Info("TODO: Start up neo4j's dependencies.")
+	serviceName := "neo4j-red@1.service"
+	setTargetState(fleetClient, serviceName, "launched")
+	// TODO confirm that neo4j has successfully started up.
 }
 

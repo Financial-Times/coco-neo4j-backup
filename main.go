@@ -116,19 +116,17 @@ func run(
 		log.Panic("Error instantiating fleet client!")
 		panic(err) // TODO handle this properly
 	}
-	rsync(dataFolder, targetFolder)
-	log.Info("TODO: repeat the rsync process until the changes are minimal")
+	//rsync(dataFolder, targetFolder)
+	// TODO: repeat the rsync process until the changes are minimal")
 	shutDownNeo(fleetClient)
 	rsync(dataFolder, targetFolder)
-	// TODO generate archiveName
+	startNeo(fleetClient)
 	archiveName := time.Now().UTC().Format(archiveNameDateFormat)
 	archiveName += "_" + env
 	archiveName += ".tar.gz"
 	pipeReader, _ := createBackup(targetFolder, archiveName)
-	startNeo(fleetClient)
 	uploadToS3(startTime, awsAccessKey, awsSecretKey, s3Domain, bucketName, archiveName, pipeReader)
 	validateEnvironment()
-	log.Infof("Finishing early because implementation is still on-going.")
 }
 
 func uploadToS3(startTime time.Time, awsAccessKey string, awsSecretKey string, s3Domain string, bucketName string, archiveName string, pipeReader *io.PipeReader) (err error){
