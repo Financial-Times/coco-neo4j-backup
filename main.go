@@ -110,8 +110,10 @@ func run(
 	env string,
 	) {
 
+	checkMounts()
 	fleetClient, err := newFleetClient(fleetEndpoint, socksProxy)
 	if err != nil {
+		log.Panic("Error instantiating fleet client!")
 		panic(err) // TODO handle this properly
 	}
 	rsync(dataFolder, targetFolder)

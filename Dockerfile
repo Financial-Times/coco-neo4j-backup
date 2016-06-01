@@ -1,24 +1,43 @@
     FROM alpine
 
+RUN apk add --update bash git alpine-sdk linux-headers go
 ADD  *.go /
-RUN apk add --update bash git alpine-sdk linux-headers go \
-  && echo "http://dl-4.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
-  && ORG_PATH="github.com/Financial-Times" \
-  && REPO_PATH="${ORG_PATH}/coco-neo4j-backup" \
-  && export GOPATH=/gopath \
-  && mkdir -p $GOPATH/src/${ORG_PATH} \
-  && ln -s ${PWD} $GOPATH/src/${REPO_PATH} \
-  && cd $GOPATH/src/${REPO_PATH} \
-  && go get \
-  && go test \
-  && go build ${REPO_PATH} \
-  && apk del go git alpine-sdk linux-headers \
-  && rm -rf $GOPATH /var/cache/apk/*
+ENV GOPATH /go
+ENV ORG_PATH github.com/Financial-Times
+RUN go get github.com/Financial-Times/coco-neo4j-backup
+RUN echo "http://dl-4.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
+RUN ORG_PATH="github.com/Financial-Times" \
+    && REPO_PATH="${ORG_PATH}/coco-neo4j-backup" \
+    && export GOPATH=/gopath \
+    && mkdir -p $GOPATH/src/${ORG_PATH} \
+    && ln -nsf ${PWD} $GOPATH/src/${REPO_PATH} \
+    && cd $GOPATH/src/${REPO_PATH} \
+    && echo "Running 'go get'..." \
+    && go get -v \
+    && echo "Running 'go test'..." \
+    && go test \
+    && echo "Running 'go build'..." \
+    && go build ${REPO_PATH}
 
-CMD ./coco-neo4j-backup \
-    --awsAccessKey=$AWS_ACCESS_KEY \
-    --awsSecretKey=$AWS_SECRET_KEY \
-    --bucketName=$BUCKET_NAME \
-    --dataFolder=$DATA_FOLDER \
-    --s3Domain=$S3_DOMAIN \
-    --env=$ENVIRONMENT_TAG
+#RUN apk del go git alpine-sdk linux-headers
+#    && rm -rf /gopath /var/cache/apk/*
+
+#    && echo "PWD=${PWD}" \
+#    && echo "GOPATH=${GOPATH}" \
+
+#RUN apk add --update bash git alpine-sdk linux-headers \
+#  && echo "http://dl-4.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
+#  && ORG_PATH="github.com/Financial-Times" \
+#  && REPO_PATH="${ORG_PATH}/coco-neo4j-backup" \
+#  && export GOPATH=/gopath \
+#  && mkdir -p $GOPATH/src/${ORG_PATH} \
+#  && ln -s ${PWD} $GOPATH/src/${REPO_PATH} \
+#  && cd $GOPATH/src/${REPO_PATH} \
+#  && apk add --update go \
+#  && go get \
+#  && go test \
+#  && go build ${REPO_PATH} \
+#  && apk del go git alpine-sdk linux-headers \
+#  && rm -rf $GOPATH /var/cache/apk/*
+
+CMD ./coco-neo4j-backup

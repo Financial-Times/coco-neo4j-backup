@@ -10,7 +10,32 @@ import (
 	"archive/tar"
 	"path/filepath"
 	log "github.com/Sirupsen/logrus"
+	//"bytes"
+	//"bytes"
 )
+
+func checkMounts() {
+	// TODO Split out the mega-multipack option of "archive" into its carefully selected constituent components.
+	log.Info("Checking mounts...")
+	cmd := exec.Command("ls", "/data")
+
+	output, err := cmd.CombinedOutput()
+	o := string(output[:len(output)])
+	if err != nil {
+		log.WithFields(log.Fields{"output": o, "err": err}).Panic("Error executing command!")
+		panic(err) // TODO deal with this properly
+	}
+	log.WithFields(log.Fields{"output": o}).Info("Command complete.")
+
+	cmd = exec.Command("df", "-h")
+	output, err = cmd.CombinedOutput()
+	o = string(output[:len(output)])
+	if err != nil {
+		log.WithFields(log.Fields{"output": o, "err": err}).Panic("Error executing command!")
+		panic(err) // TODO deal with this properly
+	}
+	log.WithFields(log.Fields{"output": o}).Info("Command complete.")
+}
 
 func rsync(sourceDir string, targetDir string) {
 	if ! strings.HasSuffix(sourceDir, "/") {
@@ -23,6 +48,7 @@ func rsync(sourceDir string, targetDir string) {
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		log.WithFields(log.Fields{"sourceDir": sourceDir, "targetDir": targetDir}).Panic("Error executing rsync command!")
 		panic(err) // TODO deal with this properly
 	}
 	log.WithFields(log.Fields{"output": output}).Info("rsync process complete.")
