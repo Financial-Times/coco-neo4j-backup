@@ -7,6 +7,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/urfave/cli"
 	"archive/tar"
+	"fmt"
 )
 
 const archiveNameDateFormat = "2006-01-02T15-04-05"
@@ -145,8 +146,7 @@ func run(
 		log.WithFields(log.Fields{"err": err}).Panic("Error starting up neo4j.")
 		os.Exit(1)
 	}
-	archiveName := time.Now().UTC().Format(archiveNameDateFormat)
-	archiveName += "_" + env + ".tar.gz"
+	archiveName := fmt.Sprintf("neo4j_backup_%s_%s.tar.gz", time.Now().UTC().Format(archiveNameDateFormat), env)
 	pipeReader, err := createBackup(targetFolder, archiveName)
 	if err != nil {
 		log.WithFields(log.Fields{"err": err}).Panic("Error creating backup tarball.")
@@ -172,7 +172,7 @@ func run(
 	log.WithFields(log.Fields{
 		"archiveName": archiveName,
 		"bucketName": bucketName,
-		"duration_s": time.Since(startTime).String(),
+		"duration": time.Since(startTime).String(),
 	}).Info("Artefact successfully uploaded to S3; backup process complete.")
 }
 
@@ -197,7 +197,7 @@ func uploadToS3(awsAccessKey string, awsSecretKey string, s3Domain string, bucke
 	log.WithFields(log.Fields{
 		"archiveName": archiveName,
 		"bucketName": bucketName,
-		"duration_s": time.Since(startTime).String(),
+		"duration": time.Since(startTime).String(),
 	}).Info("Uploaded archive to S3.")
 	return nil
 }

@@ -30,7 +30,7 @@ func rsync(sourceDir string, targetDir string) (error) {
 			"err": err,
 		}).Panic("Error executing rsync command!")
 	} else {
-		log.WithFields(log.Fields{"output": o, "duration_s": time.Since(startTime).String()}).Info("rsync process complete.")
+		log.WithFields(log.Fields{"output": o, "duration": time.Since(startTime).String()}).Info("rsync process complete.")
 	}
 	return err
 }
@@ -55,23 +55,34 @@ func createBackup(dataFolder string, archiveName string) (*io.PipeReader, error)
 	log.WithFields(log.Fields{"archiveName": archiveName,}).Info("Asynchronously compressing archive.")
 
 	pipeReader, pipeWriter := io.Pipe()
-	//compress the tar archive
+	// compress the tar archive
 	gzipWriter := gzip.NewWriter(pipeWriter)
-	//create a tar archive
+	// create a tar archive
 	tarWriter = tar.NewWriter(gzipWriter)
 
-	//a goroutine is needed because the pipe is synchronous:
-	//the writer will block until the reader is reading and vice-versa
+	// a goroutine is needed because the pipe is synchronous:
+	// the writer will block until the reader is reading and vice-versa
 	go func() {
 		//we have to close these here so that the read function doesn't block
 		defer pipeWriter.Close()
 		defer gzipWriter.Close()
 		defer tarWriter.Close()
 
-		//recursively walk the filetree of the data folder,
-		//writing all files and folder structure to the archive
-		filepath.Walk(dataFolder, addtoArchive)
-		log.WithFields(log.Fields{"duration_s": time.Since(startTime).String()}).Info("tar/gzip process complete.")
+		// recursively walk the file tree of the data folder,
+		// writing all files and folder structure to the archive
+		err := filepath.Walk(dataFolder, addtoArchive)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"dataFolder": dataFolder,
+				"archiveName": archiveName,
+				"err": err,
+			}).Panic("There was a problem creating the backup artefact.")
+			return err
+		}
+		log.WithFields(log.Fields{
+			"duration": time.Since(startTime).String(),
+			"archiveName": archiveName,
+		}).Info("tar/gzip process complete.")
 	}()
 	return pipeReader, nil
 }
