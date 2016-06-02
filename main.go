@@ -14,7 +14,6 @@ const archiveNameDateFormat = "2006-01-02T15-04-05"
 var tarWriter *tar.Writer
 
 func main() {
-
 	startTime := time.Now()
 	log.Infof("Starting backup operation at startTime=%d.\n", startTime)
 
@@ -110,29 +109,71 @@ func run(
 	env string,
 	) {
 
-	//checkMounts()
 	fleetClient, err := newFleetClient(fleetEndpoint, socksProxy)
 	if err != nil {
-		log.Panic("Error instantiating fleet client!")
-		panic(err) // TODO handle this properly
+		log.WithFields(log.Fields{
+			"fleetEndpoint": fleetEndpoint,
+			"socksProxy": socksProxy,
+			"err": err,
+		}).Panic("Error instantiating fleet client; backup process failed.")
+		os.Exit(1)
 	}
-	//rsync(dataFolder, targetFolder)
-	// TODO: repeat the rsync process until the changes are minimal")
-	shutDownNeo(fleetClient)
-	rsync(dataFolder, targetFolder)
-	startNeo(fleetClient)
+	err = rsync(dataFolder, targetFolder)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"dataFolder": dataFolder,
+			"targetFolder": targetFolder,
+			"err": err,
+		}).Panic("Error synchronising neo4j files while database is running; backup process failed.")
+		os.Exit(1)
+	}
+	err = shutDownNeo(fleetClient)
+	if err != nil {
+		log.WithFields(log.Fields{"err": err}).Panic("Error shutting down neo4j; backup process failed.")
+		os.Exit(1)
+	}
+	err = rsync(dataFolder, targetFolder)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"fleetEndpoint": fleetEndpoint,
+			"socksProxy": socksProxy,
+			"err": err,
+		}).Panic("Error synchronising neo4j files while database is stopped; backup process failed.")
+		os.Exit(1)
+	}
+	err = startNeo(fleetClient)
+	if err != nil {
+		log.WithFields(log.Fields{"err": err}).Panic("Error starting up neo4j.")
+		os.Exit(1)
+	}
 	archiveName := time.Now().UTC().Format(archiveNameDateFormat)
-	archiveName += "_" + env
-	archiveName += ".tar.gz"
-	pipeReader, _ := createBackup(targetFolder, archiveName)
-	uploadToS3(startTime, awsAccessKey, awsSecretKey, s3Domain, bucketName, archiveName, pipeReader)
+	archiveName += "_" + env + ".tar.gz"
+	pipeReader, err := createBackup(targetFolder, archiveName)
+	if err != nil {
+		log.WithFields(log.Fields{"err": err}).Panic("Error creating backup tarball.")
+		os.Exit(1)
+	}
+	err = uploadToS3(awsAccessKey, awsSecretKey, s3Domain, bucketName, archiveName, pipeReader)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"s3Domain": s3Domain,
+			"bucketName": bucketName,
+			"archiveName": archiveName,
+			"err": err,
+		}).Panic("Error uploading to S3; backup process failed.")
+		os.Exit(1)
+	}
 	validateEnvironment()
+	log.WithFields(log.Fields{
+		"archiveName": archiveName,
+		"bucketName": bucketName,
+		"duration_s": time.Since(startTime).String(),
+	}).Info("Artefact successfully uploaded to S3; backup process complete.")
 }
 
-func uploadToS3(startTime time.Time, awsAccessKey string, awsSecretKey string, s3Domain string, bucketName string, archiveName string, pipeReader *io.PipeReader) (err error){
-
+func uploadToS3(awsAccessKey string, awsSecretKey string, s3Domain string, bucketName string, archiveName string, pipeReader *io.PipeReader) (err error){
+	startTime := time.Now()
 	bucketWriterProvider := newS3WriterProvider(awsAccessKey, awsSecretKey, s3Domain, bucketName)
-
 	bucketWriter, err := bucketWriterProvider.getWriter(archiveName)
 	if err != nil {
 		log.Panic("BucketWriter cannot be created: "+err.Error(), err)
@@ -144,14 +185,14 @@ func uploadToS3(startTime time.Time, awsAccessKey string, awsSecretKey string, s
 	_, err = io.Copy(bucketWriter, pipeReader)
 	if err != nil {
 		log.Panic("Cannot upload archive to S3: "+err.Error(), err)
-		return
+		return err
 	}
 	pipeReader.Close()
 
 	log.WithFields(log.Fields{
 		"archiveName": archiveName,
 		"bucketName": bucketName,
-		"duration": time.Since(startTime).String(),
+		"duration_s": time.Since(startTime).String(),
 	}).Info("Uploaded archive to S3.")
 	return nil
 }

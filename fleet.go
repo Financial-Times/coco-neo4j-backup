@@ -13,7 +13,7 @@ import (
 func newFleetClient(fleetEndpoint string, socksProxy string) (client.API, error) {
 	u, err := url.Parse(fleetEndpoint)
 	if err != nil {
-		panic(err) // TODO handle this properly
+		return nil, err
 	}
 	httpClient := &http.Client{Transport: &http.Transport{MaxIdleConnsPerHost: 100}}
 
@@ -38,21 +38,26 @@ func newFleetClient(fleetEndpoint string, socksProxy string) (client.API, error)
 	log.Infof("Connecting to fleet API on %s", u)
 	fleetHTTPAPIClient, err := client.NewHTTPClient(httpClient, *u)
 	if err != nil {
-		panic(err) // TODO handle this properly
+		return nil, err
 	}
 	return fleetHTTPAPIClient, err
 }
 
-func shutDownNeo(fleetClient client.API) {
-	isDeployerActive, err := isServiceActive(fleetClient, "deployer.service")
+func shutDownNeo(fleetClient client.API) (error) {
+	deployerServiceName := "deployer.service"
+	isDeployerActive, err := isServiceActive(fleetClient, deployerServiceName)
 	if isDeployerActive || err != nil {
-		log.Warnf(`Problem: either the deployer is still active, or there was a problem checking its status.
+		log.WithFields(log.Fields{
+			"deployerServiceName": deployerServiceName,
+			"err": err,
+		}).Panic(`Problem: either the deployer is still active, or there was a problem checking its status.
 We cannot complete the backup process in case neo4j is accidentally started up again during backup creation.`)
-		panic(err) // TODO handle this properly.
+		return err
 	}
-	// TODO: Use the Go fleet API to shut down neo4j's dependencies (ingesters?).
+	// TODO use the Go fleet API to shut down neo4j's dependencies (ingesters?).
 	serviceName := "neo4j-red@1.service"
-	setTargetState(fleetClient, serviceName, "inactive")
+	err = setTargetState(fleetClient, serviceName, "inactive")
+	return err
 	// TODO check whether neo4j has successfully been shut down
 }
 
@@ -77,9 +82,10 @@ func setTargetState(fleetClient client.API, serviceName string, targetState stri
 
 func isServiceActive(fleetClient client.API, serviceName string) (bool, error) {
 	unitStates, err := fleetClient.UnitStates()
+	isActive := false
 	if err != nil {
 		log.Panic("Could not retrieve list of units from fleet API, do you need to start a SOCKS proxy?")
-		return true, err // TODO handle this properly
+		return isActive, err
 	}
 	log.WithFields(log.Fields{"num": len(unitStates)}).Info("Retrieved services from fleet API.")
 	for index, each := range unitStates {
@@ -91,16 +97,13 @@ func isServiceActive(fleetClient client.API, serviceName string) (bool, error) {
 				"SystemdLoadState": each.SystemdLoadState,
 			}).Info("Processing service.")
 			if each.SystemdActiveState == "active" {
-				return true, err
-			} else {
-				return false, err
+				isActive = true
 			}
+			break
 		}
 	}
-	log.WithFields(log.Fields{
-		"serviceName": serviceName,
-	}).Panic("Could not find service in list of services!")
-	return false, err
+	log.WithFields(log.Fields{"serviceName": serviceName}).Warn("Could not find service in list of services, assuming the service is inactive.")
+	return isActive, err
 }
 
 func startNeo(fleetClient client.API) {

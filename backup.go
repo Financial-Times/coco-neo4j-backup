@@ -9,32 +9,11 @@ import (
 	"archive/tar"
 	"path/filepath"
 	log "github.com/Sirupsen/logrus"
+	"time"
 )
 
-//func checkMounts() {
-//	// TODO Split out the mega-multipack option of "archive" into its carefully selected constituent components.
-//	log.Info("Checking mounts...")
-//	cmd := exec.Command("ls", "/data")
-//
-//	output, err := cmd.CombinedOutput()
-//	o := string(output[:len(output)])
-//	if err != nil {
-//		log.WithFields(log.Fields{"output": o, "err": err}).Panic("Error executing command!")
-//		panic(err) // TODO deal with this properly
-//	}
-//	log.WithFields(log.Fields{"output": o}).Info("Command complete.")
-//
-//	cmd = exec.Command("df", "-h")
-//	output, err = cmd.CombinedOutput()
-//	o = string(output[:len(output)])
-//	if err != nil {
-//		log.WithFields(log.Fields{"output": o, "err": err}).Panic("Error executing command!")
-//		panic(err) // TODO deal with this properly
-//	}
-//	log.WithFields(log.Fields{"output": o}).Info("Command complete!")
-//}
-
-func rsync(sourceDir string, targetDir string) {
+func rsync(sourceDir string, targetDir string) (error) {
+	startTime := time.Now()
 	if ! strings.HasSuffix(sourceDir, "/") {
 		log.Warnf("Source directory should probably have a trailing slash! sourceDir=\"%s\"", sourceDir)
 	}
@@ -52,22 +31,30 @@ func rsync(sourceDir string, targetDir string) {
 			"output": o,
 			"err": err,
 		}).Panic("Error executing rsync command!")
-		panic(err) // TODO deal with this properly
+	} else {
+		log.WithFields(log.Fields{"output": o, "duration_s": time.Since(startTime).String()}).Info("rsync process complete.")
 	}
-	log.WithFields(log.Fields{"output": o}).Info("rsync process complete.")
+	return err
 }
 
 func createBackup(dataFolder string, archiveName string) (*io.PipeReader, error) {
+	startTime := time.Now()
 	if _, err := os.Stat(dataFolder); os.IsNotExist(err) {
-		log.Warnf("Directory dataFolder=\"%s\" does not exist!", dataFolder)
-		panic(err) // TODO Handle this properly.
+		log.WithFields(log.Fields{
+			"dataFolder": dataFolder,
+			"err": err,
+		}).Panic("Directory does not exist!")
+		return nil, err
 	}
 	if _, err := os.Stat(archiveName); os.IsExist(err) {
-		log.Warnf("Archive file archiveName=\"%s\" already exists!", archiveName)
-		panic(err) // TODO Handle this properly.
+		log.WithFields(log.Fields{
+			"archiveName": archiveName,
+			"err": err,
+		}).Panic("Archive file already exists!")
+		return nil, err
 	}
 
-	log.WithFields(log.Fields{"archiveName": archiveName,}).Info("Compressing archive.")
+	log.WithFields(log.Fields{"archiveName": archiveName,}).Info("Asynchronously compressing archive.")
 
 	pipeReader, pipeWriter := io.Pipe()
 	//compress the tar archive
@@ -86,6 +73,7 @@ func createBackup(dataFolder string, archiveName string) (*io.PipeReader, error)
 		//recursively walk the filetree of the data folder,
 		//writing all files and folder structure to the archive
 		filepath.Walk(dataFolder, addtoArchive)
+		log.WithFields(log.Fields{"duration_s": time.Since(startTime).String()}).Info("tar/gzip process complete.")
 	}()
 	return pipeReader, nil
 }
@@ -97,26 +85,30 @@ func addtoArchive(path string, fileInfo os.FileInfo, err error) error {
 
 	file, err := os.Open(path)
 	if err != nil {
-		log.Panic("Cannot open file to add to archive: "+path+", error: "+err.Error(), err)
+		log.WithFields(log.Fields{"path": path, "err": err}).Panic("Cannot open file to add to archive.")
+		return err
 	}
 	defer file.Close()
 
 	//create and write tar-specific file header
 	fileInfoHeader, err := tar.FileInfoHeader(fileInfo, "")
 	if err != nil {
-		log.Panic("Cannot create tar header, error: "+err.Error(), err)
+		log.WithFields(log.Fields{"path": path, "err": err}).Panic("Cannot create tar header.")
+		return err
 	}
 	//replace file name with full path to preserve file structure in the archive
 	fileInfoHeader.Name = path
 	err = tarWriter.WriteHeader(fileInfoHeader)
 	if err != nil {
-		log.Panic("Cannot write tar header, error: "+err.Error(), err)
+		log.WithFields(log.Fields{"path": path, "err": err}).Panic("Cannot create tar header.")
+		return err
 	}
 
 	//add file to the archive
 	_, err = io.Copy(tarWriter, file)
 	if err != nil {
-		log.Panic("Cannot add file to archive, error: "+err.Error(), err)
+		log.WithFields(log.Fields{"path": path, "err": err}).Panic("Cannot add file to archive.")
+		return err
 	}
 
 	log.WithFields(log.Fields{"path": path}).Info("Added file to archive.")

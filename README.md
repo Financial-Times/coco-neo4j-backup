@@ -35,16 +35,10 @@ Development Setup
 TODO
 ----
 
-1. Write the code to:
-
-    1. Shut down neo4j's dependencies.
-    1. Shut down neo4j.
-    1. Create a backup artefact using tar and gzip.
-    1. Upload the archive to S3.
-    1. Start up neo4j.
-    1. Start up neo4j's dependencies.
-    1. Shameless plagiarise mongo-backup.timer to create neo4j-backup.timer
-    1. 
+1. Shut down neo4j's dependencies.
+1. Start up neo4j's dependencies.
+1. Shameless plagiarise mongo-backup.timer to create neo4j-backup.timer
+1. Stop and start the deployer to avoid neo4j being accidentally started up during a backup.
 
 
 Notes and Questions
@@ -60,3 +54,14 @@ Notes and Questions
         src/github.com/Financial-Times/coco-neo4j-backup/main.go:24: undefined: backup
 
     * A: To fix this problem, change the working directory for the run configuration to be the home directory of the project.
+
+
+Dependencies
+------------
+
+This service needs access to the neo4j file system. It therefore relies on the `/vol` partition being present on the host machine,
+so that it can be mounted into the container for the `rsync` process. The original plan was 
+
+[fleet-states]: https://github.com/coreos/fleet/blob/master/Documentation/states.md
+[docker-hub]: https://hub.docker.com/r/coco/coco-neo4j-backup/
+[circle-ci]: https://circleci.com/gh/Financial-Times/coco-neo4j-backup
