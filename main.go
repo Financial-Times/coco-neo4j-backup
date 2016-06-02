@@ -77,7 +77,6 @@ func main() {
 		},
 	}
 	app.Action = func(c *cli.Context) error {
-		// TODO allow overrides for sourceDir and targetDir
 		run(
 			startTime,
 			c.String("fleetEndpoint"),
@@ -153,6 +152,12 @@ func run(
 		log.WithFields(log.Fields{"err": err}).Panic("Error creating backup tarball.")
 		os.Exit(1)
 	}
+	log.WithFields(log.Fields{
+		"s3Domain": s3Domain,
+		"bucketName": bucketName,
+		"archiveName": archiveName,
+		"err": err,
+	}).Panic("Uploading archive to S3.")
 	err = uploadToS3(awsAccessKey, awsSecretKey, s3Domain, bucketName, archiveName, pipeReader)
 	if err != nil {
 		log.WithFields(log.Fields{

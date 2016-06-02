@@ -15,10 +15,8 @@ import (
 func rsync(sourceDir string, targetDir string) (error) {
 	startTime := time.Now()
 	if ! strings.HasSuffix(sourceDir, "/") {
-		log.Warnf("Source directory should probably have a trailing slash! sourceDir=\"%s\"", sourceDir)
+		log.WithFields(log.Fields{"sourceDir": sourceDir}).Warn("Source directory should probably have a trailing slash!")
 	}
-	log.Info("TODO: rsync the neo4j data directory to a temporary location.")
-
 	// TODO Split out the mega-multipack option of "archive" into its carefully selected constituent components.
 	cmd := exec.Command("rsync", "--archive", "--verbose", "--delete", sourceDir, targetDir)
 
