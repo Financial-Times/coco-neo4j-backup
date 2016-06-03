@@ -79,7 +79,6 @@ func main() {
 	}
 	app.Action = func(c *cli.Context) error {
 		err := runOuter(
-			startTime,
 			c.String("fleetEndpoint"), // fleet
 			c.String("socksProxy"),    // fleet
 			c.String("awsAccessKey"),  // S3
@@ -94,6 +93,7 @@ func main() {
 			log.WithFields(log.Fields{"err": err}).Error("There was an error; backup process failed.")
 			os.Exit(1)
 		}
+		log.WithFields(log.Fields{"duration": time.Since(startTime).String()}).Info("Backup process complete.")
 		return err
 	}
 
@@ -101,7 +101,6 @@ func main() {
 }
 
 func runOuter(
-	startTime time.Time,
 	fleetEndpoint string,
 	socksProxy string,
 	awsAccessKey string,
@@ -122,19 +121,22 @@ func runOuter(
 		}).Error("Error instantiating fleet client; backup process failed.")
 		return err
 	}
+	archiveName := fmt.Sprintf("neo4j_backup_%s_%s.tar.gz", time.Now().UTC().Format(archiveNameDateFormat), env)
 
-	return runInner(fleetClient, startTime, awsAccessKey, awsSecretKey, dataFolder, targetFolder, s3Domain, bucketName, env)
+	bucketWriter, err := newBucketWriter(awsAccessKey, awsSecretKey, s3Domain, bucketName, archiveName)
+	if err != nil {
+		log.WithFields(log.Fields{"err": err}).Error("Error instantiating S3 bucket writer; backup process failed.")
+		return err
+	}
+
+	return runInner(fleetClient, bucketWriter, dataFolder, targetFolder, env)
 }
 
 func runInner(
 	fleetClient fleetAPI,
-	startTime time.Time,
-	awsAccessKey string,
-	awsSecretKey string,
+	bucketWriter io.WriteCloser,
 	dataFolder string,
 	targetFolder string,
-	s3Domain string,
-	bucketName string,
 	env string,
 	) (error) {
 
@@ -168,40 +170,27 @@ func runInner(
 		log.WithFields(log.Fields{"err": err}).Error("Error creating backup tarball.")
 		return err
 	}
-	log.WithFields(log.Fields{
-		"s3Domain": s3Domain,
-		"bucketName": bucketName,
-		"archiveName": archiveName,
-		"err": err,
-	}).Info("Uploading archive to S3.")
-	err = uploadToS3(awsAccessKey, awsSecretKey, s3Domain, bucketName, archiveName, pipeReader)
+	log.WithFields(log.Fields{"archiveName": archiveName, "err": err}).Info("Uploading archive to S3.")
+	err = uploadToS3(bucketWriter, pipeReader)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"s3Domain": s3Domain,
-			"bucketName": bucketName,
-			"archiveName": archiveName,
-			"err": err,
-		}).Error("Error uploading to S3; backup process failed.")
+		log.WithFields(log.Fields{"archiveName": archiveName, "err": err}).Error("Error uploading to S3; backup process failed.")
 		return err
 	}
 	validateEnvironment()
-	log.WithFields(log.Fields{
-		"archiveName": archiveName,
-		"bucketName": bucketName,
-		"duration": time.Since(startTime).String(),
-	}).Info("Artefact successfully uploaded to S3; backup process complete.")
+	log.WithFields(log.Fields{"archiveName": archiveName}).Info("Artefact successfully uploaded to S3; backup process complete.")
 	return nil
 }
 
-
-func uploadToS3(awsAccessKey string, awsSecretKey string, s3Domain string, bucketName string, archiveName string, pipeReader *io.PipeReader) (err error){
-	startTime := time.Now()
+func newBucketWriter(awsAccessKey string, awsSecretKey string, s3Domain string, bucketName string, archiveName string) (io.WriteCloser, error) {
 	bucketWriterProvider := newS3WriterProvider(awsAccessKey, awsSecretKey, s3Domain, bucketName)
 	bucketWriter, err := bucketWriterProvider.getWriter(archiveName)
 	if err != nil {
 		log.Error("BucketWriter cannot be created: "+err.Error(), err)
-		return err
 	}
+	return bucketWriter, err
+}
+
+func uploadToS3(bucketWriter io.WriteCloser, pipeReader *io.PipeReader) (err error) {
 	defer bucketWriter.Close()
 
 	//upload the archive to the bucket
@@ -211,11 +200,5 @@ func uploadToS3(awsAccessKey string, awsSecretKey string, s3Domain string, bucke
 		return err
 	}
 	pipeReader.Close()
-
-	log.WithFields(log.Fields{
-		"archiveName": archiveName,
-		"bucketName": bucketName,
-		"duration": time.Since(startTime).String(),
-	}).Info("Uploaded archive to S3.")
 	return nil
 }
