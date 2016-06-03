@@ -156,7 +156,11 @@ func runInner(
 	}
 	err = rsync(dataFolder, targetFolder)
 	if err != nil {
-		log.WithFields(log.Fields{"err": err}).Error("Error synchronising neo4j files while database is stopped; backup process failed.")
+		log.WithFields(log.Fields{
+			"dataFolder": dataFolder,
+			"targetFolder": targetFolder,
+			"err": err,
+		}).Error("Error synchronising neo4j files while database is stopped; backup process failed.")
 		return err
 	}
 	err = startNeo(fleetClient)
