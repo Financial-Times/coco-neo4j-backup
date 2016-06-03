@@ -65,4 +65,16 @@ func TestEndToEndProcessHappyPath(t *testing.T) {
 	}
 }
 
-// TODO test error cases to improve the coverage
+func TestRunInnerWithNonExistentFolders(t *testing.T) {
+	assert := assert.New(t)
+	mockFleet := &mockFleetAPI{}
+	mockWriter := &mockWriteCloser{}
+	assert.NotNil(runInner(mockFleet, mockWriter, "/tmp/doesnotexist/", "/tmp/doesnotexisteither", "mockenv"))
+}
+
+//func TestRunInnerWithNonExistentFolders(t *testing.T) {
+//	assert := assert.New(t)
+//	mockFleet := &mockFleetAPI{}
+//	mockWriter := &mockWriteCloser{}
+//	assert.NotNil(runInner(mockFleet, mockWriter, "/tmp/doesnotexist/", "/tmp/doesnotexisteither", "mockenv"))
+//}

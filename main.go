@@ -129,7 +129,7 @@ func runOuter(
 		return err
 	}
 
-	return runInner(fleetClient, bucketWriter, dataFolder, targetFolder, env)
+	return runInner(fleetClient, bucketWriter, dataFolder, targetFolder, archiveName)
 }
 
 func runInner(
@@ -137,7 +137,7 @@ func runInner(
 	bucketWriter io.WriteCloser,
 	dataFolder string,
 	targetFolder string,
-	env string,
+	archiveName string,
 	) (error) {
 
 	err := rsync(dataFolder, targetFolder)
@@ -164,7 +164,6 @@ func runInner(
 		log.WithFields(log.Fields{"err": err}).Error("Error starting up neo4j.")
 		return err
 	}
-	archiveName := fmt.Sprintf("neo4j_backup_%s_%s.tar.gz", time.Now().UTC().Format(archiveNameDateFormat), env)
 	pipeReader, err := createBackup(targetFolder, archiveName)
 	if err != nil {
 		log.WithFields(log.Fields{"err": err}).Error("Error creating backup tarball.")
