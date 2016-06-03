@@ -21,7 +21,7 @@ func rsync(sourceDir string, targetDir string) (error) {
 	cmd := exec.Command("rsync", "--archive", "--verbose", "--delete", sourceDir, targetDir)
 
 	output, err := cmd.CombinedOutput()
-	o := string(output[:len(output)])
+	o := string(output[:])
 	if err != nil {
 		log.WithFields(log.Fields{
 			"sourceDir": sourceDir,

@@ -5,6 +5,7 @@ import (
 	"github.com/rlmcpherson/s3gof3r"
 )
 
+// S3WriterProvider AWS S3 writer provider
 type S3WriterProvider struct {
 	bucket *s3gof3r.Bucket
 }

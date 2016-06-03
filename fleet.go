@@ -30,9 +30,9 @@ func newFleetClient(fleetEndpoint string, socksProxy string) (fleetAPI, error) {
 			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,
 		}
-		dialer, err := proxy.SOCKS5("tcp", socksProxy, nil, netDialler)
-		if err != nil {
-			log.Fatalf("error with proxy %s: %v\n", socksProxy, err)
+		dialer, err2 := proxy.SOCKS5("tcp", socksProxy, nil, netDialler)
+		if err2 != nil {
+			log.Fatalf("error with proxy %s: %v\n", socksProxy, err2)
 		}
 		httpClient.Transport = &http.Transport{
 			Proxy:               http.ProxyFromEnvironment,
@@ -76,15 +76,14 @@ func setTargetState(fleetClient fleetAPI, serviceName string, targetState string
 			"targetState": targetState,
 			"serviceName": serviceName,
 		}).Error("Problem setting unit target state!")
-		return err
 	} else {
 		log.WithFields(log.Fields{
 			"err": err,
 			"targetState": targetState,
 			"serviceName": serviceName,
 		}).Info("Set unit target state successfully.")
-		return err
 	}
+	return err
 }
 
 func isServiceActive(fleetClient fleetAPI, serviceName string) (bool, error) {

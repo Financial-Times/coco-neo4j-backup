@@ -54,7 +54,7 @@ func makeTempFilesystem(rootDirName string) (rootPath string, err error) {
 func TestEndToEndProcessHappyPath(t *testing.T) {
 	log.Info("TestEndToEndProcessHappyPath")
 	assert := assert.New(t)
-	mockFleet := &mockFleetApi{}
+	mockFleet := &mockFleetAPI{}
 	mockWriter := &mockWriteCloser{}
 
 	rootPath, err := makeTempFilesystem(rootDirName)
@@ -92,7 +92,7 @@ func TestEndToEndProcessHappyPath(t *testing.T) {
 func TestRunInnerWithNonExistentFolders(t *testing.T) {
 	log.Info("TestRunInnerWithNonExistentFolders")
 	assert := assert.New(t)
-	mockFleet := &mockFleetApi{}
+	mockFleet := &mockFleetAPI{}
 	mockWriter := &mockWriteCloser{}
 	assert.NotNil(runInner(
 		mockFleet,
@@ -105,7 +105,7 @@ func TestRunInnerWithNonExistentFolders(t *testing.T) {
 func TestRunInnerWithFleetError(t *testing.T) {
 	log.Info("TestRunInnerWithFleetError")
 	assert := assert.New(t)
-	mockFleetWithErrors := &mockFleetApiError{}
+	mockFleetWithErrors := &mockFleetAPIError{}
 	mockWriter := &mockWriteCloser{}
 	rootPath, err := makeTempFilesystem(rootDirName)
 	assert.NoError(err)
@@ -120,7 +120,7 @@ func TestRunInnerWithFleetError(t *testing.T) {
 func TestRunInnerWithNoTrailingSlash(t *testing.T) {
 	log.Info("TestRunInnerWithNoTrailingSlash")
 	assert := assert.New(t)
-	mockFleet := &mockFleetApi{}
+	mockFleet := &mockFleetAPI{}
 	mockWriter := &mockWriteCloser{}
 	rootPath, err := makeTempFilesystem(rootDirName)
 	assert.NoError(err)
