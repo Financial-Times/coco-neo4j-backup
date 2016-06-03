@@ -8,9 +8,16 @@ import (
 	"golang.org/x/net/proxy"
 	"net/http"
 	log "github.com/Sirupsen/logrus"
+	"github.com/coreos/fleet/schema"
 )
 
-func newFleetClient(fleetEndpoint string, socksProxy string) (client.API, error) {
+// lifted from the fleet client library for mocking purposes.
+type fleetAPI interface {
+	UnitStates() ([]*schema.UnitState, error)
+	SetUnitTargetState(name, target string) error
+}
+
+func newFleetClient(fleetEndpoint string, socksProxy string) (fleetAPI, error) {
 	u, err := url.Parse(fleetEndpoint)
 	if err != nil {
 		return nil, err
@@ -43,14 +50,14 @@ func newFleetClient(fleetEndpoint string, socksProxy string) (client.API, error)
 	return fleetHTTPAPIClient, err
 }
 
-func shutDownNeo(fleetClient client.API) (error) {
+func shutDownNeo(fleetClient fleetAPI) (error) {
 	deployerServiceName := "deployer.service"
 	isDeployerActive, err := isServiceActive(fleetClient, deployerServiceName)
 	if isDeployerActive || err != nil {
 		log.WithFields(log.Fields{
 			"deployerServiceName": deployerServiceName,
 			"err": err,
-		}).Panic(`Problem: either the deployer is still active, or there was a problem checking its status.
+		}).Error(`Problem: either the deployer is still active, or there was a problem checking its status.
 We cannot complete the backup process in case neo4j is accidentally started up again during backup creation.`)
 		return err
 	}
@@ -61,14 +68,14 @@ We cannot complete the backup process in case neo4j is accidentally started up a
 	// TODO check whether neo4j has successfully been shut down
 }
 
-func setTargetState(fleetClient client.API, serviceName string, targetState string) (error) {
+func setTargetState(fleetClient fleetAPI, serviceName string, targetState string) (error) {
 	err := fleetClient.SetUnitTargetState(serviceName, targetState)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err,
 			"targetState": targetState,
 			"serviceName": serviceName,
-		}).Panic("Problem setting unit target state!")
+		}).Error("Problem setting unit target state!")
 		return err
 	} else {
 		log.WithFields(log.Fields{
@@ -80,11 +87,11 @@ func setTargetState(fleetClient client.API, serviceName string, targetState stri
 	}
 }
 
-func isServiceActive(fleetClient client.API, serviceName string) (bool, error) {
+func isServiceActive(fleetClient fleetAPI, serviceName string) (bool, error) {
 	unitStates, err := fleetClient.UnitStates()
 	isActive := false
 	if err != nil {
-		log.Panic("Could not retrieve list of units from fleet API, do you need to start a SOCKS proxy?")
+		log.Error("Could not retrieve list of units from fleet API, do you need to start a SOCKS proxy?")
 		return isActive, err
 	}
 	log.WithFields(log.Fields{"num": len(unitStates)}).Info("Retrieved services from fleet API.")
@@ -106,10 +113,11 @@ func isServiceActive(fleetClient client.API, serviceName string) (bool, error) {
 	return isActive, err
 }
 
-func startNeo(fleetClient client.API) {
+func startNeo(fleetClient fleetAPI) (error) {
 	log.Info("Starting up neo4j...")
 	serviceName := "neo4j-red@1.service"
 	setTargetState(fleetClient, serviceName, "launched")
 	// TODO confirm that neo4j has successfully started up.
+	return nil
 }
 

@@ -19,6 +19,36 @@ so that it can do rsync and all that jazz
 no API for this.
 
 
+Running a Backup
+----------------
+
+At the time of writing, the neo4j backup process is not automated. It is also tied to the red neo4j instance.
+
+To run a backup (using the `semantic` cluster as an example):
+
+1. SSH to the cluster:
+
+        ssh core@semantic-tunnel-up.ft.com
+
+1. Stop the ingester and the deployer:
+
+        fleetctl stop deployer.service
+        fleetctl stop content-ingester-neo4j-red@1
+
+1. Run the backup:
+
+        fleetctl start neo4j-backup.service
+
+1. Wait for it to finish (it should take about half an hour):
+
+        fleetctl journal -f neo4j-backup.service
+
+1. Start the deployer and ingester:
+
+        fleetctl start deployer.service
+        fleetctl start content-ingester-neo4j-red@1
+
+
 Development Setup
 -----------------
 
