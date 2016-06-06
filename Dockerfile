@@ -10,6 +10,7 @@ ENV GOPATH /gopath
 ENV ORG_PATH github.com/Financial-Times
 ENV REPO_PATH github.com/Financial-Times/coco-neo4j-backup
 RUN go get -v $REPO_PATH
+RUN go get -v -t $REPO_PATH
 RUN rm -rf $GOPATH/src/$REPO_PATH
 RUN echo "http://dl-4.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
 ADD  *.go /
@@ -20,6 +21,7 @@ RUN ORG_PATH="github.com/Financial-Times" \
     && ln -nsf ${PWD} $GOPATH/src/${REPO_PATH} \
     && cd $GOPATH/src/${REPO_PATH} \
     && go get -v \
+    && go get -v -t \
     && go test \
     && go build ${REPO_PATH}
 
