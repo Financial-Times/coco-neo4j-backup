@@ -123,6 +123,21 @@ Development Setup
         go build
         ./coco-neo3j-bakup --socksProxy localhost:1080
 
+1. Testing that everything builds ok:
+
+        docker build -t coco-neo4j-backup .
+
+1. Releasing a new version:
+
+    1. Tag the release:
+
+            git tag 0.x.0
+            git push --tag
+
+    1. Check that Docker Hub built it ok: https://hub.docker.com/r/coco/coco-neo4j-backup/builds/
+    1. Update the version in `services.yaml` via a branch/PR.
+    1. Wait for the deployer to deploy the service.
+
 
 TODO
 ----
