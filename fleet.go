@@ -61,7 +61,7 @@ func shutDownNeo(fleetClient fleetAPI) (error) {
 			"err": err,
 		}).Error(`Problem: either the deployer is still active, or there was a problem checking its status.
 We cannot complete the backup process in case neo4j is accidentally started up again during backup creation.`)
-		if err == nil {
+		if err != nil {
 			return err
 		} else {
 			return errors.New(`Problem: either the deployer is still active, or there was a problem checking its status.
