@@ -130,7 +130,17 @@ TODO
 1. Shut down neo4j's dependencies.
 1. Start up neo4j's dependencies.
 1. Shameless plagiarise mongo-backup.timer to create neo4j-backup.timer
-1. Stop and start the deployer to avoid neo4j being accidentally started up during a backup.
+1. Stop and start the deployer programmatically to avoid neo4j being accidentally started up during a backup.
+1. Upload backups into a folder inside the bucket.
+1. Write a health check.
+1. Lock down the version in services.yaml to a specific tag.
+1. Write more tests. Always more tests.
+
+
+Ideas for automated tests
+-------------------------
+
+1. A test that instantiates neo4j, writes some simple data, backs it up, restores it, and tests that it still works as desired.
 
 
 Notes and Questions

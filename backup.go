@@ -21,14 +21,14 @@ func rsync(sourceDir string, targetDir string) (error) {
 	cmd := exec.Command("rsync", "--archive", "--verbose", "--delete", sourceDir, targetDir)
 
 	output, err := cmd.CombinedOutput()
-	o := string(output[:len(output)])
+	o := string(output[:])
 	if err != nil {
 		log.WithFields(log.Fields{
 			"sourceDir": sourceDir,
 			"targetDir": targetDir,
 			"output": o,
 			"err": err,
-		}).Panic("Error executing rsync command!")
+		}).Error("Error executing rsync command!")
 	} else {
 		log.WithFields(log.Fields{"output": o, "duration": time.Since(startTime).String()}).Info("rsync process complete.")
 	}
@@ -41,14 +41,14 @@ func createBackup(dataFolder string, archiveName string) (*io.PipeReader, error)
 		log.WithFields(log.Fields{
 			"dataFolder": dataFolder,
 			"err": err,
-		}).Panic("Directory does not exist!")
+		}).Error("Directory does not exist!")
 		return nil, err
 	}
 	if _, err := os.Stat(archiveName); os.IsExist(err) {
 		log.WithFields(log.Fields{
 			"archiveName": archiveName,
 			"err": err,
-		}).Panic("Archive file already exists!")
+		}).Error("Archive file already exists!")
 		return nil, err
 	}
 
@@ -76,8 +76,7 @@ func createBackup(dataFolder string, archiveName string) (*io.PipeReader, error)
 				"dataFolder": dataFolder,
 				"archiveName": archiveName,
 				"err": err,
-			}).Panic("There was a problem creating the backup artefact.")
-			return err
+			}).Error("There was a problem creating the backup artefact.")
 		}
 		log.WithFields(log.Fields{
 			"duration": time.Since(startTime).String(),
@@ -94,7 +93,7 @@ func addtoArchive(path string, fileInfo os.FileInfo, err error) error {
 
 	file, err := os.Open(path)
 	if err != nil {
-		log.WithFields(log.Fields{"path": path, "err": err}).Panic("Cannot open file to add to archive.")
+		log.WithFields(log.Fields{"path": path, "err": err}).Error("Cannot open file to add to archive.")
 		return err
 	}
 	defer file.Close()
@@ -102,21 +101,21 @@ func addtoArchive(path string, fileInfo os.FileInfo, err error) error {
 	//create and write tar-specific file header
 	fileInfoHeader, err := tar.FileInfoHeader(fileInfo, "")
 	if err != nil {
-		log.WithFields(log.Fields{"path": path, "err": err}).Panic("Cannot create tar header.")
+		log.WithFields(log.Fields{"path": path, "err": err}).Error("Cannot create tar header.")
 		return err
 	}
 	//replace file name with full path to preserve file structure in the archive
 	fileInfoHeader.Name = path
 	err = tarWriter.WriteHeader(fileInfoHeader)
 	if err != nil {
-		log.WithFields(log.Fields{"path": path, "err": err}).Panic("Cannot create tar header.")
+		log.WithFields(log.Fields{"path": path, "err": err}).Error("Cannot create tar header.")
 		return err
 	}
 
 	//add file to the archive
 	_, err = io.Copy(tarWriter, file)
 	if err != nil {
-		log.WithFields(log.Fields{"path": path, "err": err}).Panic("Cannot add file to archive.")
+		log.WithFields(log.Fields{"path": path, "err": err}).Error("Cannot add file to archive.")
 		return err
 	}
 
@@ -125,5 +124,5 @@ func addtoArchive(path string, fileInfo os.FileInfo, err error) error {
 }
 
 func validateEnvironment() {
-	log.Info("TODO: test that everything is ok")
+	log.Info("TODO: test that everything is ok: is there a tarball on S3 with the right size?")
 }
