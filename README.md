@@ -63,52 +63,88 @@ This is a cold process, so neo4j and its services will be unavailable while this
 
         fleetctl stop deployer.service
 
-1. Identify the machines in the cluster that are running the red and blue instances:
- 
-        core@ip-172-24-12-247 ~ $ fleetctl list-units | grep ^neo4j-red@
-        neo4j-red@1.service                e4882255.../172.24.184.250    active    running
+1. Download the backup file from S3 (~4GB at the time of writing) by firing up a container that has the AWS command-line client installed:
 
-1. Stop the red and blue dependent services:
+    1. SSH to the machine running neo and create/enter a container with the `/vol` volume mounted:
 
-        fleetctl stop content-ingester-neo4j-red@1.service v1-content-annotator-red@1.service v2-content-annotator-red@1.service
-        fleetctl stop content-ingester-neo4j-blue@1.service v1-content-annotator-blue@1.service v2-content-annotator-blue@1.service
+            fleetctl ssh neo4j-red@1.service
+            docker run -ti -v /vol:/vol alpine sh
 
-1. Stop neo red and blue instances:
+    1. Inside the container, export AWS credentials as environment variables, then install AWS command line tools:
 
-        fleetctl stop neo4j-blue@1.service neo4j-red@1.service
+            export AWS_ACCESS_KEY_ID="$(etcdctl get /ft/_credentials/aws/aws_access_key_id)"
+            export AWS_SECRET_ACCESS_KEY="$(etcdctl get /ft/_credentials/aws/aws_secret_access_key)"
+            export AWS_DEFAULT_REGION="eu-west-1"
+            apk --update add python py-pip
+            pip install awscli
 
-1. Download the backup file from S3 (~4GB at the time of writing):
+    1. Finally, copy the tarball from S3 to `/vol`:
 
-        wget <URL>
+            aws s3 cp s3://com.ft.universalpublishing.backup-data/neo4j_backup_2016-06-06T12-55-09_semantic.tar.gz .
 
-1. Repeat these instructions for the red and blue neo4j instances (using red as an example):
+
+
+1. The following instructions need to be repeated for the `red` and `blue` neo4j instances. To ease the process, an environment variable
+has been used which contains the 'colour' of the neo4j instance.
+
+    1. Set the `$NEO_COLOUR` environment variable:
+
+            export NEO_COLOUR=red # then repeat with 'blue'
+
+    1. SSH to the aforementioned red cluster host and re-export the envvar:
+
+            fleetctl ssh neo4j-${NEO_COLOUR}@1.service
+            export NEO_COLOUR=red # then repeat with 'blue'
+            export ARCHIVE_NAME="neo4j_backup_2016-06-06T12-55-09_semantic.tar.gz"
+
+    1. Stop dependent services:
+    
+            fleetctl stop content-ingester-neo4j-${NEO_COLOUR}@1.service v1-content-annotator-${NEO_COLOUR}@1.service v2-content-annotator-${NEO_COLOUR}@1.service
+
+    1. Stop neo:
+    
+            fleetctl stop neo4j-${NEO_COLOUR}@1.service
 
     1. SCP the backup file to the cluster host that was running the red neo4j instance.
-    1. SSH to the aforementioned red cluster host.
     1. Back up the old data directory and extract the contents of the backup tarball into the `/vol` partition:
     
-            /vol/neo4j-red-1
-            mv graph.db graph.db.old
-            tar -xzvf ~/backup.tar.gz
+            cd /vol/neo4j-${NEO_COLOUR}-1 \
+                && sudo mv graph.db graph.db.old \
+                && sudo mv graph.db.backup graph.db.backup.old \
+                && sudo tar -xzvf /vol/neo4j-${NEO_COLOUR}-1/$ARCHIVE_NAME --strip-components=1 \
+                && sudo mv graph.db.backup graph.db
 
-    1. Start up neo:
+    1. Start up neo and its dependencies:
 
-            fleetctl start neo4j-red@1.service
-
-    1. Start up dependent services: 
-
-            fleetctl start content-ingester-neo4j-red@1.service v1-content-annotator-red@1.service v2-content-annotator-red@1.service
+            fleetctl start neo4j-${NEO_COLOUR}@1.service \
+                && sleep 10 \
+                && fleetctl start content-ingester-neo4j-${NEO_COLOUR}@1.service v1-content-annotator-${NEO_COLOUR}@1.service v2-content-annotator-${NEO_COLOUR}@1.service
 
     1. Test that everything is ok, e.g. by getting some sample data from the red API (you will need to flesh the below curl command
     out with the rest of the parameters required:
 
-            curl -H "<auth header>" https://semantic-up.ft.com/__people-rw-neo4j-red/people/{uuid}
+            curl -H "<auth header>" https://semantic-up.ft.com/__people-rw-neo4j-${NEO_COLOUR}/people/{uuid}
 
-1. Repeat the process for the blue system.
+1. Repeat the process for the blue system, starting with:
+
+        exit
+        fleetctl ssh neo4j-blue@1.service
+        export NEO_COLOUR=blue
+
 1. Once you're happy that the restore process has worked properly, you can start the deployer and let everyone know that the world
 is ok again:
 
         fleetctl start deployer.service
+
+
+NB. It may be possible to condense the S3 download process down into a single command, but at the time of writing it failed to stream
+the archive file properly from S3 so I have left it out of the official instructions:
+ 
+    docker run -ti  -v '/etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt' -v '/vol:/vol' \
+        --env "AWS_ACCESS_KEY_ID=$(etcdctl get /ft/_credentials/aws/aws_access_key_id)" \
+        --env "AWS_SECRET_ACCESS_KEY=$(etcdctl get /ft/_credentials/aws/aws_secret_access_key)" \
+        coco/gof3r gof3r get -b com.ft.universalpublishing.backup-data -k neo4j_backup_2016-06-06T12-55-09_semantic.tar.gz \
+            --endpoint s3-eu-west-1.amazonaws.com > /vol/tmp/neo4j_backup_2016-06-06T12-55-09_semantic.tar.gz
 
 
 Development Setup
@@ -142,14 +178,19 @@ Development Setup
 TODO
 ----
 
+The below items may want to be implemented at some point, perhaps when we start "backup 2.0" if/when we start using hot backups
+with Neo4j Enterprise.
+
 1. Shut down neo4j's dependencies.
 1. Start up neo4j's dependencies.
-1. Shameless plagiarise mongo-backup.timer to create neo4j-backup.timer
+1. Shamelessly plagiarise mongo-backup.timer to create neo4j-backup.timer.
 1. Stop and start the deployer programmatically to avoid neo4j being accidentally started up during a backup.
 1. Upload backups into a folder inside the bucket.
 1. Write a health check.
-1. Lock down the version in services.yaml to a specific tag.
+1. ~~Lock down the version in services.yaml to a specific tag.~~ DONE
 1. Write more tests. Always more tests.
+1. Print a link to the backup archive in S3.
+1. Check CPU usage, then see if using an LZ4 compressor reduces CPU usage (potentially at the cost of a larger backup file).
 
 
 Ideas for automated tests
