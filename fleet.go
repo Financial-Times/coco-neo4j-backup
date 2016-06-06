@@ -9,6 +9,7 @@ import (
 	"net/http"
 	log "github.com/Sirupsen/logrus"
 	"github.com/coreos/fleet/schema"
+	"errors"
 )
 
 // lifted from the fleet client library for mocking purposes.
@@ -56,10 +57,17 @@ func shutDownNeo(fleetClient fleetAPI) (error) {
 	if isDeployerActive || err != nil {
 		log.WithFields(log.Fields{
 			"deployerServiceName": deployerServiceName,
+			"isDeployerActive": isDeployerActive,
 			"err": err,
 		}).Error(`Problem: either the deployer is still active, or there was a problem checking its status.
 We cannot complete the backup process in case neo4j is accidentally started up again during backup creation.`)
-		return err
+		if err == nil {
+			return err
+		} else {
+			return errors.New(`Problem: either the deployer is still active, or there was a problem checking its status.
+We cannot complete the backup process in case neo4j is accidentally started up again during backup creation.`)
+		}
+
 	}
 	// TODO use the Go fleet API to shut down neo4j's dependencies (ingesters?).
 	serviceName := "neo4j-red@1.service"
