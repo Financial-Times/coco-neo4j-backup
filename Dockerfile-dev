@@ -44,4 +44,4 @@ RUN ORG_PATH="github.com/Financial-Times" \
 #  && apk del go git alpine-sdk linux-headers \
 #  && rm -rf $GOPATH /var/cache/apk/*
 
-CMD ./coco-neo4j-backup
+CMD ["./coco-neo4j-backup"]

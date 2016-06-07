@@ -16,4 +16,4 @@ RUN apk add --update bash git alpine-sdk linux-headers go rsync \
     && apk del go git alpine-sdk linux-headers \
     && rm -rf $GOPATH /var/cache/apk/*
 
-CMD ./coco-neo4j-backup
+CMD ["./coco-neo4j-backup"]
