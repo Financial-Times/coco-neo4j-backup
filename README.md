@@ -68,13 +68,14 @@ This is a cold process, so neo4j and its services will be unavailable while this
     1. SSH to the machine running neo and create/enter a container with the `/vol` volume mounted:
 
             fleetctl ssh neo4j-red@1.service
-            docker run -ti -v /vol:/vol alpine sh
+            docker run -ti \
+                --env "AWS_ACCESS_KEY_ID=$(etcdctl get /ft/_credentials/aws/aws_access_key_id)" \
+                --env "AWS_SECRET_ACCESS_KEY=$(etcdctl get /ft/_credentials/aws/aws_secret_access_key)" \
+                --env "AWS_DEFAULT_REGION=eu-west-1" \
+                -v /vol:/vol alpine sh
 
     1. Inside the container, export AWS credentials as environment variables, then install AWS command line tools:
 
-            export AWS_ACCESS_KEY_ID="$(etcdctl get /ft/_credentials/aws/aws_access_key_id)"
-            export AWS_SECRET_ACCESS_KEY="$(etcdctl get /ft/_credentials/aws/aws_secret_access_key)"
-            export AWS_DEFAULT_REGION="eu-west-1"
             apk --update add python py-pip
             pip install awscli
 
