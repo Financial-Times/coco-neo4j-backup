@@ -2,28 +2,12 @@
 
 # run.bash: build and run the backup program.
 
-function env {
-    export DOCKER="/usr/local/bin/docker"
+function envlocal {
     export AWS_ACCESS_KEY=$(cat $HOME/.coco_aws_access_key)
     export AWS_SECRET_KEY=$(cat $HOME/.coco_aws_secret_key)
-    export BUCKET_NAME="com.ft.universalpublishing.backup-data"
-#    export DATA_FOLDER="/data/graph.db/"
-#    export TARGET_FOLDER="/data/graph.db.backup"
-    export S3_DOMAIN="s3-eu-west-1.amazonaws.com"
-    export ENVIRONMENT_TAG="semantic"
-    export DOCKER_APP_VERSION=latest
-#    export MOUNT_POINT="/vol/neo4j-red-1"
-    export MOUNT_POINT="$HOME/Documents/Neo4j"
-    export ETCDCTL="ssh semantic-tunnel-up.ft.com /usr/bin/etcdctl"
-#    export FLEETD_BIN="/usr/local/bin/fleetctl"
-}
-
-function envlocal {
-#    export DATA_FOLDER="/data/default.graphdb/"
-    unset DATA_FOLDER
     export DATA_FOLDER="$HOME/Documents/Neo4j/default.graphdb/"
     export TARGET_FOLDER="$HOME/Documents/Neo4j/graph.db.backup"
-#    export ETCDCTL="/usr/local/bin/etcdctl"
+    export ETCDCTL="/usr/local/bin/etcdctl"
 }
 
 function build {
