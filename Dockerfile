@@ -1,4 +1,4 @@
-    FROM alpine
+FROM alpine
 
 ADD  *.go /
 RUN apk add --update bash git alpine-sdk linux-headers go rsync \
