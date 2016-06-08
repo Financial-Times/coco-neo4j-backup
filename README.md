@@ -192,7 +192,8 @@ with Neo4j Enterprise.
 1. Write more tests. Always more tests.
 1. Print a link to the backup archive in S3.
 1. Check CPU usage, then see if using an LZ4 compressor reduces CPU usage (potentially at the cost of a larger backup file).
-
+1. Switch to using a library like [env-decode] for much simpler parsing of environment variables without needing CLI params, which
+are unnecessary for most apps.
 
 Ideas for automated tests
 -------------------------
@@ -225,3 +226,4 @@ so that it can be mounted into the container for the `rsync` process. The origin
 [docker-hub]: https://hub.docker.com/r/coco/coco-neo4j-backup/
 [circle-ci]: https://circleci.com/gh/Financial-Times/coco-neo4j-backup
 [sourcegraph]: https://sourcegraph.com/github.com/Financial-Times/coco-neo4j-backup
+[env-decode]: https://github.com/joeshaw/envdecode
