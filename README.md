@@ -162,11 +162,11 @@ Development Setup
 
 1. Testing that everything builds ok:
 
-        docker build -t coco-neo4j-backup .
+        docker build -t $(basename $PWD) .
 
 1. Releasing a new version:
 
-    1. Tag the release:
+    1. Tag the release according to semantic versioning principles:
 
             git tag 0.x.0
             git push --tag
@@ -224,3 +224,4 @@ so that it can be mounted into the container for the `rsync` process. The origin
 [fleet-states]: https://github.com/coreos/fleet/blob/master/Documentation/states.md
 [docker-hub]: https://hub.docker.com/r/coco/coco-neo4j-backup/
 [circle-ci]: https://circleci.com/gh/Financial-Times/coco-neo4j-backup
+[sourcegraph]: https://sourcegraph.com/github.com/Financial-Times/coco-neo4j-backup

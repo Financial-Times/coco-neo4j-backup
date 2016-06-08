@@ -14,9 +14,21 @@ const archiveNameDateFormat = "2006-01-02T15-04-05"
 
 var tarWriter *tar.Writer
 
+type config struct {
+	fleetEndpoint string
+	socksProxy string
+	awsAccessKey string
+	awsSecretKey string
+	dataFolder string
+	targetFolder string
+	s3Domain string
+	bucketName string
+	env string
+}
+
 func main() {
 	startTime := time.Now()
-	log.Infof("Starting backup operation at startTime=%d.\n", startTime)
+	log.Infof("Starting backup operation at startTime=%d.", startTime)
 
 	app := cli.NewApp()
 	app.Name = "Universal Publishing CoCo neo4j Backup Service"
@@ -78,7 +90,7 @@ func main() {
 		},
 	}
 	app.Action = func(c *cli.Context) error {
-		err := runOuter(
+		err := runOuter(config{
 			c.String("fleetEndpoint"), // fleet
 			c.String("socksProxy"),    // fleet
 			c.String("awsAccessKey"),  // S3
@@ -88,9 +100,8 @@ func main() {
 			c.String("s3Domain"),      // S3
 			c.String("bucketName"),    // S3
 			c.String("env"),           // filesystem
-		)
+		})
 		if err != nil {
-			log.WithFields(log.Fields{"err": err}).Error("There was an error; backup process failed.")
 			os.Exit(1)
 		}
 		log.WithFields(log.Fields{"duration": time.Since(startTime).String()}).Info("Backup process complete.")
@@ -100,36 +111,26 @@ func main() {
 	app.Run(os.Args)
 }
 
-func runOuter(
-	fleetEndpoint string,
-	socksProxy string,
-	awsAccessKey string,
-	awsSecretKey string,
-	dataFolder string,
-	targetFolder string,
-	s3Domain string,
-	bucketName string,
-	env string,
-	) (error) {
+func runOuter(cfg config) (error) {
 
-	fleetClient, err := newFleetClient(fleetEndpoint, socksProxy)
+	fleetClient, err := newFleetClient(cfg.fleetEndpoint, cfg.socksProxy)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"fleetEndpoint": fleetEndpoint,
-			"socksProxy": socksProxy,
+			"fleetEndpoint": cfg.fleetEndpoint,
+			"socksProxy": cfg.socksProxy,
 			"err": err,
 		}).Error("Error instantiating fleet client; backup process failed.")
 		return err
 	}
-	archiveName := fmt.Sprintf("neo4j_backup_%s_%s.tar.gz", time.Now().UTC().Format(archiveNameDateFormat), env)
+	archiveName := fmt.Sprintf("neo4j_backup_%s_%s.tar.gz", time.Now().UTC().Format(archiveNameDateFormat), cfg.env)
 
-	bucketWriter, err := newBucketWriter(awsAccessKey, awsSecretKey, s3Domain, bucketName, archiveName)
+	bucketWriter, err := newBucketWriter(cfg.awsAccessKey, cfg.awsSecretKey, cfg.s3Domain, cfg.bucketName, archiveName)
 	if err != nil {
 		log.WithFields(log.Fields{"err": err}).Error("Error instantiating S3 bucket writer; backup process failed.")
 		return err
 	}
 
-	return runInner(fleetClient, bucketWriter, dataFolder, targetFolder, archiveName)
+	return runInner(fleetClient, bucketWriter, cfg.dataFolder, cfg.targetFolder, archiveName)
 }
 
 func runInner(
