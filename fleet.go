@@ -43,11 +43,12 @@ func newFleetClient(fleetEndpoint string, socksProxy string) (fleetAPI, error) {
 		}
 	}
 
-	log.Infof("Connecting to fleet API on %s", u)
+	log.WithFields(log.Fields{"url": u}).Info("Connecting to fleet API.")
 	fleetHTTPAPIClient, err := client.NewHTTPClient(httpClient, *u)
 	if err != nil {
 		return nil, err
 	}
+	log.WithFields(log.Fields{"url": u}).Info("Connection successfully established to fleet API.")
 	return fleetHTTPAPIClient, err
 }
 

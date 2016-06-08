@@ -141,20 +141,37 @@ func runInner(
 	archiveName string,
 	) (error) {
 
+	log.WithFields(log.Fields{
+		"dataFolder": dataFolder,
+		"targetFolder": targetFolder,
+	}).Info("Starting first hot rsync process.")
 	err := rsync(dataFolder, targetFolder)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"dataFolder": dataFolder,
 			"targetFolder": targetFolder,
 			"err": err,
-		}).Error("Error synchronising neo4j files while database is running; backup process failed.")
-		return err
+		}).Warn("Error synchronising neo4j files while database is running (i.e. hot); re-trying once.")
+		err = rsync(dataFolder, targetFolder)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"dataFolder": dataFolder,
+				"targetFolder": targetFolder,
+				"err": err,
+			}).Warn("Encountered another error synchronising neo4j files while database is running (i.e. hot); backup process failed.")
+			return err
+		}
 	}
+	log.Info("hot rsync completed, shutting down neo...")
 	err = shutDownNeo(fleetClient)
 	if err != nil {
 		log.WithFields(log.Fields{"err": err}).Error("Error shutting down neo4j; backup process failed.")
 		return err
 	}
+	log.WithFields(log.Fields{
+		"dataFolder": dataFolder,
+		"targetFolder": targetFolder,
+	}).Info("Starting cold rsync process...")
 	err = rsync(dataFolder, targetFolder)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -164,17 +181,19 @@ func runInner(
 		}).Error("Error synchronising neo4j files while database is stopped; backup process failed.")
 		return err
 	}
+	log.Info("cold rsync completed, restarting neo...")
 	err = startNeo(fleetClient)
 	if err != nil {
 		log.WithFields(log.Fields{"err": err}).Error("Error starting up neo4j.")
 		return err
 	}
+	log.Info("neo has been started up, commencing archive creation...")
 	pipeReader, err := createBackup(targetFolder, archiveName)
 	if err != nil {
 		log.WithFields(log.Fields{"err": err}).Error("Error creating backup tarball.")
 		return err
 	}
-	log.WithFields(log.Fields{"archiveName": archiveName, "err": err}).Info("Uploading archive to S3.")
+	log.WithFields(log.Fields{"archiveName": archiveName, "err": err}).Info("Archive created, uploading archive to S3.")
 	err = uploadToS3(bucketWriter, pipeReader)
 	if err != nil {
 		log.WithFields(log.Fields{"archiveName": archiveName, "err": err}).Error("Error uploading to S3; backup process failed.")
