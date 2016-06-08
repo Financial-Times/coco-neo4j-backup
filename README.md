@@ -78,12 +78,13 @@ This is a cold process, so neo4j and its services will be unavailable while this
 
             apk --update add python py-pip
             pip install awscli
-
+            
     1. Finally, copy the tarball from S3 to `/vol`:
 
+            cd /vol
             aws s3 cp s3://com.ft.universalpublishing.backup-data/neo4j_backup_2016-06-06T12-55-09_semantic.tar.gz .
 
-
+1. Exit the container and the VM
 
 1. The following instructions need to be repeated for the `red` and `blue` neo4j instances. To ease the process, an environment variable
 has been used which contains the 'colour' of the neo4j instance.
@@ -106,8 +107,8 @@ has been used which contains the 'colour' of the neo4j instance.
     
             fleetctl stop neo4j-${NEO_COLOUR}@1.service
 
-    1. SCP the backup file to the cluster host that was running the red neo4j instance.
-    1. Back up the old data directory and extract the contents of the backup tarball into the `/vol` partition:
+    1. SCP the backup file to the cluster host that was running the red neo4j instance (SCP only needed if you aren't where you downloaded the tarball to)
+    1. Back up the old data directory and extract the contents of the backup tarball into the `/vol` partition (please note that the expected tar ball is from the backup service and may need to be adjusted for any other way in which the tar file may have been created):
     
             cd /vol/neo4j-${NEO_COLOUR}-1 \
                 && sudo mv graph.db graph.db.old \
