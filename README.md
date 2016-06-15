@@ -30,23 +30,15 @@ To run a backup (using the `semantic` cluster as an example):
 
         ssh core@semantic-tunnel-up.ft.com
 
-1. Stop the deployer, red ingester, and red annotator:
+1. Stop the deployer, red ingester, and red annotators, then run the backup and watch the logs (it should take about half an hour):
 
-        fleetctl stop deployer.service
-        fleetctl stop content-ingester-neo4j-red@1.service v1-content-annotator-red@1.service v2-content-annotator-red@1.service
+        fleetctl stop deployer.service content-ingester-neo4j-red@1.service v1-content-annotator-red@1.service v2-content-annotator-red@1.service \
+            && fleetctl start neo4j-backup.service \
+            && fleetctl journal -f neo4j-backup.service
 
-1. Run the backup:
+1. Start the services that you stopped earlier:
 
-        fleetctl start neo4j-backup.service
-
-1. Wait for it to finish (it should take about half an hour):
-
-        fleetctl journal -f neo4j-backup.service
-
-1. Start the red annotators, the red ingester and the deployer:
-
-        fleetctl start deployer.service
-        fleetctl start content-ingester-neo4j-red@1.service v1-content-annotator-red@1.service v2-content-annotator-red@1.service
+        fleetctl start deployer.service content-ingester-neo4j-red@1.service v1-content-annotator-red@1.service v2-content-annotator-red@1.service
 
 
 How to run a restore
