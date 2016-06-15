@@ -158,11 +158,12 @@ func runInner(
 				"dataFolder": dataFolder,
 				"targetFolder": targetFolder,
 				"err": err,
-			}).Warn("Encountered another error synchronising neo4j files while database is running (i.e. hot); backup process failed.")
-			return err
+			}).Warn("Encountered another error synchronising neo4j files while database is running " +
+				"(i.e. hot); backup process failed to complete successfully. " +
+				"The cold backup phase will consequently take longer than usual.")
 		}
 	}
-	log.Info("hot rsync completed, shutting down neo...")
+	log.Info("Hot rsync completed, shutting down neo...")
 	err = shutDownNeo(fleetClient)
 	if err != nil {
 		log.WithFields(log.Fields{"err": err}).Error("Error shutting down neo4j; backup process failed.")
@@ -193,7 +194,7 @@ func runInner(
 		log.WithFields(log.Fields{"err": err}).Error("Error creating backup tarball.")
 		return err
 	}
-	log.WithFields(log.Fields{"archiveName": archiveName, "err": err}).Info("Archive created, uploading archive to S3.")
+	log.WithFields(log.Fields{"archiveName": archiveName, "err": err}).Info("Initial tar/gzip archive created, streaming data to S3 as it is added to the archive...")
 	err = uploadToS3(bucketWriter, pipeReader)
 	if err != nil {
 		log.WithFields(log.Fields{"archiveName": archiveName, "err": err}).Error("Error uploading to S3; backup process failed.")
