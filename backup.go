@@ -18,7 +18,7 @@ func rsync(sourceDir string, targetDir string) (error) {
 		log.WithFields(log.Fields{"sourceDir": sourceDir}).Warn("Source directory should probably have a trailing slash!")
 	}
 	// TODO Split out the mega-multipack option of "archive" into its carefully selected constituent components.
-	cmd := exec.Command("rsync", "--archive", "--verbose", "--delete", sourceDir, targetDir)
+	cmd := exec.Command("nice", "rsync", "--archive", "--verbose", "--delete", sourceDir, targetDir)
 
 	output, err := cmd.CombinedOutput()
 	o := string(output[:])
