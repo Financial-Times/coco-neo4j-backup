@@ -98,6 +98,7 @@ func setTargetState(fleetClient fleetAPI, serviceName string, targetState string
 func isServiceActive(fleetClient fleetAPI, serviceName string) (bool, error) {
 	unitStates, err := fleetClient.UnitStates()
 	isActive := false
+	found := false
 	if err != nil {
 		log.Error("Could not retrieve list of units from fleet API, do you need to start a SOCKS proxy?")
 		return isActive, err
@@ -105,6 +106,7 @@ func isServiceActive(fleetClient fleetAPI, serviceName string) (bool, error) {
 	log.WithFields(log.Fields{"num": len(unitStates)}).Info("Retrieved services from fleet API.")
 	for index, each := range unitStates {
 		if each.Name == serviceName {
+			found = true
 			log.WithFields(log.Fields{
 				"index": index,
 				"name": each.Name,
@@ -117,7 +119,10 @@ func isServiceActive(fleetClient fleetAPI, serviceName string) (bool, error) {
 			break
 		}
 	}
-	log.WithFields(log.Fields{"serviceName": serviceName}).Warn("Could not find service in list of services, assuming the service is inactive.")
+	if !found {
+		log.WithFields(log.Fields{"serviceName": serviceName}).Warn(
+			"Could not find service in list of services, assuming the service is inactive.")
+	}
 	return isActive, err
 }
 
