@@ -177,7 +177,7 @@ with Neo4j Enterprise.
 
 1. Shut down neo4j's dependencies.
 1. Start up neo4j's dependencies.
-1. Shamelessly plagiarise mongo-backup.timer to create neo4j-backup.timer.
+1. Shamelessly plagiarise `mongo-backup.timer` to create `neo4j-backup.timer`.
 1. Stop and start the deployer programmatically to avoid neo4j being accidentally started up during a backup.
 1. Upload backups into a folder inside the bucket.
 1. Write a health check.
@@ -185,8 +185,9 @@ with Neo4j Enterprise.
 1. Write more tests. Always more tests.
 1. Print a link to the backup archive in S3.
 1. Check CPU usage, then see if using an LZ4 compressor reduces CPU usage (potentially at the cost of a larger backup file).
-1. Switch to using a library like [env-decode] for much simpler parsing of environment variables without needing CLI params, which
-are unnecessary for most apps.
+1. Switch to using a library like [env-decode] for much simpler parsing of environment variables without needing CLI params,
+which are unnecessary for most apps.
+1. Add `ionice` in front of the `nice rsync` statement, to further reduce resource usage (suggested by [martingartonft](https://github.com/martingartonft) on 2016-07-11).
 
 Ideas for automated tests
 -------------------------
