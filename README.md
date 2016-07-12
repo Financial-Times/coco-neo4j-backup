@@ -195,10 +195,7 @@ TODO
 The below items may want to be implemented at some point, perhaps when we start "backup 2.0" if/when we start using hot backups
 with Neo4j Enterprise.
 
-1. Shut down neo4j's dependencies.
-1. Start up neo4j's dependencies.
-1. Shamelessly plagiarise `mongo-backup.timer` to create `neo4j-backup.timer`.
-1. Stop and start the deployer programmatically to avoid neo4j being accidentally started up during a backup.
+1. Shamelessly plagiarise `mongo-backup.timer` to create `neo4j-backup.timer`, for scheduled backups.
 1. Upload backups into a folder inside the bucket in a format something like `neo4j-<cluster>`, e.g. `neo4j-pre-prod`.
 1. Write a health check.
 1. ~~Lock down the version in services.yaml to a specific tag.~~ DONE
@@ -207,7 +204,13 @@ with Neo4j Enterprise.
 1. Check CPU usage, then see if using an LZ4 compressor reduces CPU usage (potentially at the cost of a larger backup file).
 1. Switch to using a library like [env-decode] for much simpler parsing of environment variables without needing CLI params,
 which are unnecessary for most apps.
-1. Add `ionice` in front of the `nice rsync` statement, to further reduce resource usage (suggested by [martingartonft](https://github.com/martingartonft) on 2016-07-11).
+
+### TODO items that will probably no longer be necessary once we have hot neo4j backups
+
+1. Add `ionice` in front of the `nice rsync` statement, to further reduce resource usage (suggested by [martingartonft](https://github.com/martingartonft) on 2016-07-11). NB. will no longer be necessary once we are doing hot backups, although we might want to run the entire service under a low process priority.
+1. Stop and start the deployer programmatically to avoid neo4j being accidentally started up during a backup. It would be wise to restart `deployer.service` programmatically immediately after neo is started back up, rather than doing it manually after the backup process is complete, which will keep the deployer "outage" much shorter (added by [duffj]https://github.com/duffj) on 2016-07-12).
+1. Shut down neo4j's dependencies.
+1. Start up neo4j's dependencies.
 
 
 Ideas for automated tests
