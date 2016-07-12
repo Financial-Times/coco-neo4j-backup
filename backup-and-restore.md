@@ -35,7 +35,9 @@ To run a backup (using the `semantic` cluster as an example), you will need the 
         fleetctl ssh neo4j-backup.service
         watch du -hs /vol/neo4j-red-1
         
-* Once the backup has completed streaming up to S3, you can see it by logging in to the [InfraProd](https://awslogin.internal.ft.com/InfraProd/default.aspx) FT AWS account and looking at the [com.ft.universalpublishing.backup-data](https://console.aws.amazon.com/s3/home?region=eu-west-1#&bucket=com.ft.universalpublishing.backup-data&prefix=) bucket.
+* Once the backup has started streaming up to S3, you can see it by logging in to the [InfraProd](https://awslogin.internal.ft.com/InfraProd/default.aspx) FT AWS account and looking at the [com.ft.universalpublishing.backup-data](https://console.aws.amazon.com/s3/home?region=eu-west-1#&bucket=com.ft.universalpublishing.backup-data&prefix=) bucket. The start of the process is accompanied by this sort of log message in journald:
+
+        Jul 12 08:49:34 ip-172-24-151-154.eu-west-1.compute.internal systemd[1]: Started Job to backup neo4j DB data files to S3.
 
 * You might want to keep an eye on the output of `fleetctl list-machines`, because in the past, a backup has caused one of the host machines to crash; this problem should have been resolved by the addition of `nice` to the rsync process. If `nice` isn't enough, there is a feature in the TODO list below to also add `ionice`.
 
