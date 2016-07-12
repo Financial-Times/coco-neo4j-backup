@@ -24,7 +24,11 @@ Running a Backup
 
 At the time of writing, the neo4j backup process is not automated. It is also tied to the red neo4j instance.
 
-To run a backup (using the `semantic` cluster as an example):
+To run a backup (using the `semantic` cluster as an example), you will need the following:
+
+* A basic understanding of Lniux, the console and how to execute SSH commands, with the appropriate software (PuTTY, Linux/Mac) to do so.
+* Permission to access the cluster whose database you are trying to back up. (Trying to execute the first SSH command should tell you whether you have this or not.)
+* Ideally, access to the AWS InfraProd account, so that you can verify that your backup has been created.
 
 1. SSH to the cluster:
 
@@ -40,6 +44,14 @@ To run a backup (using the `semantic` cluster as an example):
 
         fleetctl start deployer.service content-ingester-neo4j-red@1.service v1-content-annotator-red@1.service v2-content-annotator-red@1.service
 
+### Tips
+
+* While the rsync process is running, a directory will be growing inside `/vol/neo4j-red-1` on the host machine running `neo4j-backup.service`. To monitor it, do this:
+
+        fleetctl ssh neo4j-backup.service
+        watch du -hs /vol/neo4j-red-1
+        
+* Once the backup has completed streaming up to S3, you can see it by logging in to the [InfraProd](https://awslogin.internal.ft.com/InfraProd/default.aspx) FT AWS account and looking at the [com.ft.universalpublishing.backup-data](https://console.aws.amazon.com/s3/home?region=eu-west-1#&bucket=com.ft.universalpublishing.backup-data&prefix=) bucket.
 
 How to run a restore
 --------------------
@@ -179,7 +191,7 @@ with Neo4j Enterprise.
 1. Start up neo4j's dependencies.
 1. Shamelessly plagiarise `mongo-backup.timer` to create `neo4j-backup.timer`.
 1. Stop and start the deployer programmatically to avoid neo4j being accidentally started up during a backup.
-1. Upload backups into a folder inside the bucket.
+1. Upload backups into a folder inside the bucket in a format something like `neo4j-<cluster>`, e.g. `neo4j-pre-prod`.
 1. Write a health check.
 1. ~~Lock down the version in services.yaml to a specific tag.~~ DONE
 1. Write more tests. Always more tests.
@@ -188,6 +200,7 @@ with Neo4j Enterprise.
 1. Switch to using a library like [env-decode] for much simpler parsing of environment variables without needing CLI params,
 which are unnecessary for most apps.
 1. Add `ionice` in front of the `nice rsync` statement, to further reduce resource usage (suggested by [martingartonft](https://github.com/martingartonft) on 2016-07-11).
+
 
 Ideas for automated tests
 -------------------------
