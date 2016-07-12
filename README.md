@@ -26,15 +26,18 @@ At the time of writing, the neo4j backup process is not automated. It is also ti
 
 To run a backup (using the `semantic` cluster as an example), you will need the following:
 
-* A basic understanding of Lniux, the console and how to execute SSH commands, with the appropriate software (PuTTY, Linux/Mac) to do so.
+* A basic understanding of Linux, the console and how to execute SSH commands, with the appropriate software (PuTTY, Linux/Mac) to do so.
 * Permission to access the cluster whose database you are trying to back up. (Trying to execute the first SSH command should tell you whether you have this or not.)
 * Ideally, access to the AWS InfraProd account, so that you can verify that your backup has been created.
+* Ideally, a basic understanding of CoCo and the UPP stack, so that you are aware of the rough impact of the commands that you are executing.
 
 1. SSH to the cluster:
 
         ssh core@semantic-tunnel-up.ft.com
 
-1. Stop the deployer, red ingester, and red annotators, then run the backup and watch the logs (it should take about half an hour):
+1. Warn people in the appropriate Slack channel (e.g. [#coco](https://financialtimes.slack.com/messages/coco/)) that you are about to stop the deployer in that cluster and run a backup.
+
+1. Once you are satisfied that people are happy that you are running a backup, stop the deployer, red ingester, and red annotators, then run the backup and watch the logs (it should take about half an hour):
 
         fleetctl stop deployer.service content-ingester-neo4j-red@1.service v1-content-annotator-red@1.service v2-content-annotator-red@1.service \
             && fleetctl start neo4j-backup.service \
@@ -44,6 +47,8 @@ To run a backup (using the `semantic` cluster as an example), you will need the 
 
         fleetctl start deployer.service content-ingester-neo4j-red@1.service v1-content-annotator-red@1.service v2-content-annotator-red@1.service
 
+1. (OPTIONAL) Verify the backup by downloading it to your local machine, extracting it and starting up a local Neo4j instance pointing to the backed up data, then playing with the data until you are satisfied that it is complete.
+
 ### Tips
 
 * While the rsync process is running, a directory will be growing inside `/vol/neo4j-red-1` on the host machine running `neo4j-backup.service`. To monitor it, do this:
@@ -52,6 +57,9 @@ To run a backup (using the `semantic` cluster as an example), you will need the 
         watch du -hs /vol/neo4j-red-1
         
 * Once the backup has completed streaming up to S3, you can see it by logging in to the [InfraProd](https://awslogin.internal.ft.com/InfraProd/default.aspx) FT AWS account and looking at the [com.ft.universalpublishing.backup-data](https://console.aws.amazon.com/s3/home?region=eu-west-1#&bucket=com.ft.universalpublishing.backup-data&prefix=) bucket.
+
+* You might want to keep an eye on the output of `fleetctl list-machines`, because in the past, a backup has caused one of the host machines to crash; this problem should have been resolved by the addition of `nice` to the rsync process. If `nice` isn't enough, there is a feature in the TODO list below to also add `ionice`.
+
 
 How to run a restore
 --------------------
