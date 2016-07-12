@@ -74,7 +74,7 @@ after the backup process is complete, which will keep the deployer "outage" much
 
 1. (MINOR) Fix the "startTime log" bug where it doesn't show the time properly.
 1. (MINOR) When deployer is still active, you get two very similar-looking error messages in the log.
-
+1. The final log message seems to be `Started Job to backup neo4j DB data files to S3.`, which comes *after* the message `Backup process complete.`, presumably because of a multi-threading ordering problem. Needs fixing.
 
 Ideas for automated tests
 -------------------------
