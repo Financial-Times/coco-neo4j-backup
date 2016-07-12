@@ -104,9 +104,10 @@ has been used which contains the 'colour' of the neo4j instance.
     1. Back up the old data directory and extract the contents of the backup tarball into the `/vol` partition (please note that the expected tar ball is from the backup service and may need to be adjusted for any other way in which the tar file may have been created):
     
             cd /vol/neo4j-${NEO_COLOUR}-1 \
+                && ls -l \
                 && sudo mv graph.db graph.db.old \
                 && sudo mv graph.db.backup graph.db.backup.old \
-                && sudo tar -xzvf /vol/neo4j-${NEO_COLOUR}-1/$ARCHIVE_NAME --strip-components=1 \
+                && sudo tar -xzvf /vol/$ARCHIVE_NAME --strip-components=1 \
                 && sudo mv graph.db.backup graph.db
 
     1. Start up neo and its dependencies:
