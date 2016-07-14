@@ -90,7 +90,7 @@ has been used which contains the 'colour' of the neo4j instance.
 
             fleetctl ssh neo4j-${NEO_COLOUR}@1.service
             export NEO_COLOUR=red # then repeat with 'blue'
-            export ARCHIVE_NAME="neo4j_backup_2016-06-06T12-55-09_semantic.tar.gz"
+            export ARCHIVE_NAME="/vol/neo4j_backup_2016-06-06T12-55-09_semantic.tar.gz"
 
     1. Stop dependent services:
     
@@ -105,9 +105,9 @@ has been used which contains the 'colour' of the neo4j instance.
     
             cd /vol/neo4j-${NEO_COLOUR}-1 \
                 && ls -l \
-                && sudo mv graph.db graph.db.old \
-                && sudo mv graph.db.backup graph.db.backup.old \
-                && sudo tar -xzvf /vol/$ARCHIVE_NAME --strip-components=1 \
+                && sudo mv graph.db graph.db.old.`date +%s` \
+                && sudo mv graph.db.backup graph.db.backup.old.`date +%s` \
+                && sudo tar -xzvf $ARCHIVE_NAME --strip-components=1 \
                 && sudo mv graph.db.backup graph.db
 
     1. Start up neo and its dependencies:
