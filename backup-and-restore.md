@@ -113,14 +113,15 @@ has been used which contains the 'colour' of the neo4j instance.
             fleetctl stop neo4j-${NEO_COLOUR}@1.service
 
     1. SCP the backup file to the cluster host that was running the red neo4j instance (SCP only needed if you aren't where you downloaded the tarball to)
-    1. Back up the old data directory and extract the contents of the backup tarball into the `/vol` partition (please note that the expected tar ball is from the backup service and may need to be adjusted for any other way in which the tar file may have been created):
+    1. Back up the old data directory and extract the contents of the backup tarball into the `/vol` partition (please note that the expected tar ball is from the backup service and may need to be adjusted for any other way in which the tar file may have been created).
+    **NB. Some of the directories below may not yet exist, in which case the over-simplistic set of commands might not be entirely applicable. Use your intelligence to work out whether the commands are necessary. We're basically moving the existing `graph.db` directory out of the way, then allowing `tar` to extract to `graph.db.backup`, then moving the new files into place as `graph.db`.**
     
-            cd /vol/neo4j-${NEO_COLOUR}-1 \
-                && ls -l \
-                && sudo mv graph.db graph.db.old.`date +%s` \
-                && sudo mv graph.db.backup graph.db.backup.old.`date +%s` \
-                && sudo tar -xzvf $ARCHIVE_NAME --strip-components=1 \
-                && sudo mv graph.db.backup graph.db
+            cd /vol/neo4j-${NEO_COLOUR}-1; \
+                ls -l; \
+                sudo mv graph.db graph.db.old.`date +%s`; \
+                sudo mv graph.db.backup graph.db.backup.old.`date +%s`; \
+                sudo tar -xzvf $ARCHIVE_NAME --strip-components=1; \
+                sudo mv graph.db.backup graph.db;
 
     1. Start up neo and its dependencies:
 
