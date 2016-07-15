@@ -1,7 +1,13 @@
+Backup and Restore
+==================
+
 Running a Backup
 ----------------
 
-At the time of writing, the neo4j backup process is not automated. It is also tied to the red neo4j instance.
+At the time of writing, the neo4j backup process is not automated. Also, it is tied to the red neo4j instance. Making it configurable to red or blue is in the backlog.
+
+
+### Requirements
 
 To run a backup (using the `semantic` cluster as an example), you will need the following:
 
@@ -10,11 +16,13 @@ To run a backup (using the `semantic` cluster as an example), you will need the 
 * Ideally, access to the AWS InfraProd account, so that you can verify that your backup has been created.
 * Ideally, a basic understanding of CoCo and the UPP stack, so that you are aware of the rough impact of the commands that you are executing.
 
+### Steps
+
 1. SSH to the cluster:
 
         ssh core@semantic-tunnel-up.ft.com
 
-1. Warn people in the appropriate Slack channel (e.g. [#coco](https://financialtimes.slack.com/messages/coco/)) that you are about to stop the deployer in that cluster and run a backup.
+1. Warn people in the appropriate Slack channel (e.g. [#co-co](https://financialtimes.slack.com/messages/co-co/)) that you are about to stop the deployer in that cluster and run a backup.
 
 1. Once you are satisfied that people are happy that you are running a backup, stop the deployer, red ingester, and red annotators, then run the backup and watch the logs (it should take about half an hour):
 
@@ -26,7 +34,7 @@ To run a backup (using the `semantic` cluster as an example), you will need the 
 
         fleetctl start deployer.service content-ingester-neo4j-red@1.service v1-content-annotator-red@1.service v2-content-annotator-red@1.service
 
-1. (OPTIONAL) Verify the backup by downloading it to your local machine, extracting it and starting up a local Neo4j instance pointing to the backed up data, then playing with the data until you are satisfied that it is complete.
+1. *(OPTIONAL)* Verify the backup by downloading it to your local machine, extracting it and starting up a local Neo4j instance pointing to the backed up data, then playing with the data until you are satisfied that it is complete.
 
 ### Tips
 
@@ -77,7 +85,7 @@ This is a cold process, so neo4j and its services will be unavailable while this
             cd /vol
             aws s3 cp s3://com.ft.universalpublishing.backup-data/neo4j_backup_2016-06-06T12-55-09_semantic.tar.gz .
 
-1. Exit the container and the VM
+1. Exit the container and the VM.
 
 1. The following instructions need to be repeated for the `red` and `blue` neo4j instances. To ease the process, an environment variable
 has been used which contains the 'colour' of the neo4j instance.
