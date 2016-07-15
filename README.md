@@ -57,6 +57,7 @@ with Neo4j Enterprise.
 1. Check CPU usage, then see if using an LZ4 compressor reduces CPU usage (potentially at the cost of a larger backup file).
 1. Switch to using a library like [env-decode] for much simpler parsing of environment variables without needing CLI params,
 which are unnecessary for most apps.
+1. Make it possible to back up red *or* blue (rather than just red). (Requested by Scott 2016-07-15)
 
 ### TODO items that will probably no longer be necessary once we have hot neo4j backups
 
