@@ -4,8 +4,12 @@ Backup and Restore
 Running a Backup
 ----------------
 
-At the time of writing, the neo4j backup process is not automated. Also, it is tied to the red neo4j instance. Making it configurable to red or blue is in the backlog.
+### Things to note
 
+* At the time of writing, the neo4j backup process is not automated or scheduled. Making it so is in the 
+* The backup process is tied to the red neo4j instance. Making it configurable to red or blue is in the backlog - see below.
+* At the time of writing, the overall process takes around 40min.
+* The backlog is at [README](README.md).
 
 ### Requirements
 
