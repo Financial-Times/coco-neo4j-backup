@@ -8,10 +8,10 @@ import (
 	"github.com/urfave/cli"
 	"archive/tar"
 	"fmt"
-	"os/exec"
 )
 
 const archiveNameDateFormat = "2006-01-02T15-04-05"
+const neoShutdownDelayInSeconds = 10
 
 var tarWriter *tar.Writer
 
@@ -170,10 +170,8 @@ func runInner(
 		log.WithFields(log.Fields{"err": err}).Error("Error shutting down neo4j; backup process failed.")
 		return err
 	}
-	isNeoRunning()
-	log.Info("Waiting 30 seconds for neo to shut down properly")
-	time.Sleep(100 * time.Millisecond)
-	isNeoRunning()
+	log.WithFields(log.Fields{"neoShutdownDelayInSeconds": neoShutdownDelayInSeconds}).Info("Waiting for neo to shut down properly")
+	time.Sleep(neoShutdownDelayInSeconds * time.Millisecond)
 	log.WithFields(log.Fields{
 		"dataFolder": dataFolder,
 		"targetFolder": targetFolder,
@@ -184,13 +182,21 @@ func runInner(
 			"dataFolder": dataFolder,
 			"targetFolder": targetFolder,
 			"err": err,
-		}).Error("Error synchronising neo4j files while database is stopped; backup process failed. Restarting neo4j...")
-		err = startNeo(fleetClient)
+		}).Error("Error synchronising neo4j files while database is stopped (perhaps database wasn't stopped?); backup process failed. Retrying once...")
+		err = rsync(dataFolder, targetFolder)
 		if err != nil {
-			log.WithFields(log.Fields{"err": err}).Error("Error starting up neo4j.")
+			log.WithFields(log.Fields{
+				"dataFolder": dataFolder,
+				"targetFolder": targetFolder,
+				"err": err,
+			}).Error("Error synchronising neo4j files while database is stopped; backup process failed. Restarting neo4j...")
+			errr := startNeo(fleetClient)
+			if errr != nil {
+				log.WithFields(log.Fields{"err": err}).Error("Error starting up neo4j.")
+				return errr
+			}
 			return err
 		}
-		return err
 	}
 	log.Info("cold rsync completed, restarting neo...")
 	err = startNeo(fleetClient)
@@ -235,17 +241,4 @@ func uploadToS3(bucketWriter io.WriteCloser, pipeReader *io.PipeReader) (err err
 	}
 	pipeReader.Close()
 	return nil
-}
-
-func isNeoRunning() {
-	cmd := exec.Command("ps", "-ef", "|", "grep", "java", "|", "grep", "neo")
-
-	output, err := cmd.CombinedOutput()
-	o := string(output[:])
-	if err != nil {
-		log.WithFields(log.Fields{"output": o, "err": err}).Error("Error executing ps command.")
-	} else {
-		log.WithFields(log.Fields{"output": o}).Info("ps command complete.")
-	}
-
 }
