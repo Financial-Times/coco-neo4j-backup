@@ -40,6 +40,10 @@ To run a backup (using the `semantic` cluster as an example), you will need the 
 
 1. *(OPTIONAL)* Verify the backup by downloading it to your local machine, extracting it and starting up a local Neo4j instance pointing to the backed up data, then playing with the data until you are satisfied that it is complete.
 
+1. Finally, destroy the backup service so that it doesn't remain loaded by `systemd` and get unintentionally started on machine boot:
+
+        fleetctl stop neo4j-backup.service && fleetctl destroy neo4j-backup.service
+
 ### Tips
 
 * While the rsync process is running, a directory will be growing inside `/vol/neo4j-red-1` on the host machine running `neo4j-backup.service`. To monitor it, do this:
